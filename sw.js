@@ -1,4 +1,4 @@
-const V='chordpro-v3',CDN=['https://cdn.tailwindcss.com/3.4.17','https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js','https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js'];
+const V='chordpro-v4',CDN=['https://cdn.tailwindcss.com/3.4.17','https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js','https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(async c=>{await c.addAll(['./','./index.html','./manifest.webmanifest','./icon-180.png','./icon-192.png','./icon-512.png']);await Promise.all(CDN.map(u=>c.add(new Request(u,{mode:'no-cors'})).catch(()=>0)))}));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))));self.clients.claim()});
 self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const same=new URL(r.url).origin===location.origin;
