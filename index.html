@@ -1,0 +1,462 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#c2410c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ChordPro"><link rel="apple-touch-icon" href="icon-180.png"><title>ChordPro Studio &amp; Live Performance Suite</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<style>
+:root{--bg:#f3f4f6;--pn:#fff;--tx:#111827;--bd:#d1d5db;--ac:#c2410c;--bt:#e5e7eb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0b0f17;--pn:#161c28;--tx:#e5e7eb;--bd:#2b3445;--bt:#262f40}}
+:root[data-theme=dark]{--bg:#0b0f17;--pn:#161c28;--tx:#e5e7eb;--bd:#2b3445;--bt:#262f40}
+html,body{height:100%;margin:0}body{background:var(--bg);color:var(--tx);font-family:system-ui,sans-serif;display:flex;flex-direction:column}
+header button{min-height:30px;padding:2px 10px}header{display:flex;gap:6px;align-items:center;padding:3px 10px;background:var(--pn);border-bottom:1px solid var(--bd);flex-wrap:wrap}
+button,select,input{font:inherit;color:inherit}button{background:var(--bt);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;cursor:pointer;min-height:36px}
+button.on,button.pri{background:var(--ac);color:#fff;border-color:var(--ac)}select,input[type=text],input[type=search]{background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:5px;min-height:36px}
+main{flex:1;min-height:0;display:flex}.mode{flex:1;min-width:0;display:flex;flex-direction:column}.mode[hidden]{display:none}
+#bar{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;align-items:center;padding:4px 10px;background:var(--pn);border-bottom:1px solid var(--bd);font-size:13px;scrollbar-width:thin}#bar>*{flex:none}#bar button,#bar select,#bar input[type=text]{min-height:30px;padding:2px 8px}#dv{width:10px;flex:none;cursor:col-resize;background:var(--bd);touch-action:none}#dv:hover{background:var(--ac)}#split.stk{flex-direction:column}#split.stk #dv{width:auto;height:10px;cursor:row-resize}#split.stk #ed{border-right:0;border-bottom:1px solid var(--bd)}#rb{background:var(--pn);border-bottom:1px solid var(--bd);font-size:13px}#rt{display:flex;gap:2px;padding:0 8px;overflow-x:auto}#rt button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;min-height:26px;padding:1px 12px}#rt button.on{border-bottom-color:var(--ac);color:var(--ac);background:none;font-weight:600}#rp{padding:3px 10px 5px;overflow-x:auto;white-space:nowrap}.rpn{display:flex;gap:14px;align-items:center}.rpn[hidden]{display:none}.rpn>div{display:flex;gap:6px;align-items:center;padding-right:14px;border-right:1px solid var(--bd)}.rpn>div:last-child{border:0}#rb button,#rb select,#rb input[type=text]{min-height:30px;padding:2px 8px}#wrap{margin:0 auto}#rb label{display:flex;gap:4px;align-items:center;white-space:nowrap}#rb input[type=range]{width:96px;accent-color:var(--ac)}#rb input[type=color]{width:34px;height:28px;padding:0;border:1px solid var(--bd);border-radius:6px;background:none}#rb input[type=checkbox]{width:18px;height:18px}
+#bar label{display:flex;gap:4px;align-items:center;white-space:nowrap}#split{flex:1;min-height:0;display:flex}
+#ed{flex:1 1 50%;min-width:0;resize:none;border:0;border-right:1px solid var(--bd);background:var(--pn);color:var(--tx);padding:12px;font:14px/1.5 ui-monospace,Menlo,monospace}
+#pv{flex:1 1 0;min-width:0;overflow:auto;padding:8px;display:block}
+@media(max-width:760px){#split{flex-direction:column}#ed{border-right:0;border-bottom:1px solid var(--bd)}#dv{width:auto;height:12px;cursor:row-resize}}
+#wrap{position:relative}#sheet{transform-origin:0 0;position:absolute;left:0;top:0;font-family:Arial,sans-serif}
+.cols{column-gap:28px}.ln{break-inside:avoid;margin:0;line-height:var(--lh)}.p{display:inline-flex;flex-direction:column;vertical-align:top}
+.c{font-weight:700;color:var(--cc);min-height:calc(1em*var(--lh,1.3));padding-right:.35em}.t{white-space:pre}.cm{font-style:italic;color:#6b7280;margin:.5em 0}
+.ch{border-left:4px solid var(--cc);padding-left:10px;margin:var(--sg,.6em) 0}.h1{font-size:1.6em;font-weight:700}.mt{color:#555;margin-bottom:.8em}
+.sec{margin:var(--sg,.6em) 0}.lab{font-weight:700;font-size:.8em;text-transform:uppercase;opacity:.6}
+.tbl{width:100%;border-collapse:collapse}.tbl td,.tbl th{padding:8px;border-bottom:1px solid var(--bd);text-align:left}
+.pnl{flex:1;background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:10px;min-height:120px}.pnl li{padding:10px;margin:4px 0;background:var(--bt);border-radius:8px;cursor:grab;list-style:none}
+#live{position:fixed;inset:0;background:#000;color:#fff;z-index:50;display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}#live.show{display:flex}
+#md{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:60;padding:12px}#md.show{display:flex}
+.box{background:var(--pn);border:1px solid var(--bd);border-radius:12px;padding:16px;width:min(560px,100%);max-height:90%;overflow:auto;display:none}.box.show{display:block}.box textarea{width:100%;height:150px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:6px;font-family:monospace}
+
+.pg{background:#fff;box-sizing:border-box;padding:40px;position:relative;overflow:hidden;box-shadow:0 2px 14px #0005;margin-bottom:16px}.pg:last-child{margin-bottom:0}.pn{position:absolute;bottom:8px;right:14px;font-size:11px;color:#9ca3af}
+.lp{box-sizing:border-box;padding:24px;border-bottom:3px dashed #444;position:relative;overflow:hidden}.lp .t{color:#fff}.lp .mt,.lp .cm{color:#9ca3af}.lp .pn{font-size:14px;color:#6b7280}.nochord .c{display:none}
+#lbar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;padding:8px;background:#111;align-items:center}#live button,#live select{background:#222;border:1px solid #444;color:#fff;border-radius:8px}#lbar button{min-height:48px;padding:4px 14px}
+#lp{justify-self:start}#ln{justify-self:end}#lcc{display:flex;gap:10px;align-items:center}#lcc button{min-width:56px;font-size:20px}#lcc #lpl{min-width:96px;background:var(--ac);border-color:var(--ac)}#lpg{color:#aaa;font-size:13px;min-width:84px}
+#lset{background:#0b0b0b;font-size:13px;border-bottom:1px solid #333}#lset>div{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:6px 10px}#lset input[type=color]{width:34px;height:28px;padding:0;border:1px solid #444;border-radius:6px;background:none}#lset label{display:flex;gap:5px;align-items:center;color:#bbb}#lset button,#lset select{min-height:32px;padding:2px 10px}#lset input{width:100px}
+#lsc{flex:1;overflow:auto;position:relative;background:#000;color:#fff;font-family:Arial,sans-serif;--cc:#facc15;--lh:1.5;font-size:34px}
+#lsc .mt{color:#9ca3af}.lw{padding:20px 5vw 50vh;max-width:1500px;margin:0 auto}.lend{text-align:center;color:#666;padding:30px}
+#rb input[type=number],#lset input[type=number]{width:64px}#lset input[type=checkbox]{width:18px;height:18px}.rpn>div[hidden]{display:none}#lsc .cm{color:var(--hc,#111);background:var(--hb,#f59e0b);display:inline-block;padding:.05em .6em;border-radius:6px;font-style:normal;font-weight:700;margin:.3em 0}.nohint .cm{display:none}.c{font-size:var(--cs,1em)}
+:root{color-scheme:light}@media(prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark}}:root[data-theme=dark]{color-scheme:dark}
+input[type=number]{background:var(--pn);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:2px 6px;min-height:30px}option{background:var(--pn);color:var(--tx)}
+#live input[type=number],#lset input[type=number]{background:#222;color:#fff;border:1px solid #444}.tab .t{font-family:ui-monospace,Menlo,monospace}
+#pool,#sl{padding:0;margin:0}.pnl li{display:flex;align-items:center;gap:8px;cursor:default}.pnl li>span:not(.hd){flex:1;min-width:0}.pnl .hd{cursor:grab;opacity:.6;font-size:18px}.pnl li button{min-height:32px;min-width:34px;padding:2px 8px}.pnl .add{background:var(--ac);color:#fff;border-color:var(--ac);font-size:18px}th[data-k]{cursor:pointer;user-select:none}
+#lset{position:relative}#lt{flex:1;min-width:140px}#lset>#lset2{position:absolute;right:8px;top:100%;z-index:70;background:#111;border:1px solid #444;border-radius:12px;padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;width:min(640px,96vw);box-shadow:0 8px 30px #000a}#lset>#lset2[hidden]{display:none}#lset2 label{justify-content:space-between}
+.ln{margin-left:1.4em;text-indent:-1.4em}.w{display:inline-block;text-indent:0}.p{text-indent:0}.tx{white-space:pre-wrap}.tab .tx{white-space:pre}.par{margin:var(--sg,10px) 0}
+.cm-c{font-style:normal;background:#e5e7eb;color:#111;padding:.1em .6em;display:inline-block;border-radius:3px}.cm-i{font-style:italic}.cm-b{font-style:normal;border:1px solid #6b7280;padding:.1em .6em;display:inline-block}.cm-h{font-style:normal;background:#fde047;color:#111;font-weight:700;padding:.1em .6em;display:inline-block}
+.gr{display:flex;flex-wrap:wrap;font-family:ui-monospace,Menlo,monospace;font-weight:700;margin:.15em 0}.gc{min-width:3em;color:var(--cc)}.gb{color:inherit;opacity:.6;padding:0 .3em}.gx{display:flex;gap:10px;align-items:center}.gx[hidden]{display:none}
+.tab .tx{font-family:var(--tf,ui-monospace,Menlo,Consolas,'Courier New',monospace);font-size:var(--ts,1em);color:var(--tcol,inherit);white-space:pre}
+.gr{display:grid!important;max-width:100%}.gc{min-width:0;overflow:hidden;white-space:nowrap}.cm-h{background:var(--hl,#fde047)}
+.h1{font-family:var(--hf,inherit);font-size:var(--hs,1.6em);color:var(--hcol,inherit)}.lab{font-family:var(--lf,inherit);font-size:var(--lsz,.8em);color:var(--lcol,inherit)}.c{font-family:var(--cf,inherit)}
+</style></head><body>
+<header><b>🎸 ChordPro Studio</b><nav class="flex gap-1 flex-wrap" id="nav"><button data-m="editor">✏️ Editor</button><button data-m="lib">📚 Bibliothek</button><button data-m="set">📋 Setlist</button><button data-m="live">🎤 Live Stage</button></nav><span style="flex:1"></span><button id="th" title="Dark/Light">🌓</button></header>
+<main>
+<section id="m-editor" class="mode"><div id="bar"><span class="flex gap-1"><button data-v="code">✏️ Code</button><button data-v="split">◫ Split</button><button data-v="pv">👁 Vorschau</button></span>
+<label>Key <button id="tm">−</button><b id="sh">0</b><button id="tp">+</button></label>
+<label>Capo <select id="cp"></select><button id="ac">Auto-Capo</button></label>
+<label>Notation <select id="nt"><option value="std">C G Am</option><option value="rom">I V vi</option><option value="dual">Dual</option></select></label>
+<label>Spalten <button id="cm">−</button><b id="cn">1</b><button id="cpl">+</button></label>
+<label>Profil <select id="pf"></select><input type="text" id="pn" placeholder="Name" size="8"><button id="ps">💾</button></label>
+<label>Schrift <input type="range" id="fs" min="9" max="30"></label><label>Zeile <input type="range" id="ls" min="1" max="2" step=".05"></label>
+<label>Akkord <input type="color" id="cc"></label><label>Text <input type="color" id="tc"></label><button id="or">↻ Hoch/Quer</button>
+<label>Instr. <select id="in"><option>Gitarre</option><option>Ukulele</option><option>Klavier</option></select></label>
+<button id="b-ug">UG-Konverter</button><button id="b-ch">Akkord-Editor</button><button id="b-mi">MIDI</button><button id="b-pdf" class="pri">PDF</button></div>
+<div id="split"><textarea id="ed" spellcheck="false"></textarea><div id="dv" title="Ziehen zum Anpassen"></div><div id="pv"><div id="wrap"><div id="sheet"></div></div></div></div></section>
+<section id="m-lib" class="mode" hidden style="padding:10px;overflow:auto"><div class="flex gap-2 flex-wrap mb-2"><input type="search" id="q" placeholder="Suchen…"><button id="nw">＋ Neu</button><button onclick="document.getElementById('fi').click()">⬆ Import (.cho / .json / Backup)</button><input type="file" id="fi" multiple accept=".chordpro,.cho,.txt,.json" hidden><button id="bs">→ Setlist</button><button id="bp" class="pri">PDF (Auswahl)</button><button id="bd">🗑 Löschen</button><button id="bj">JSON-Export</button></div>
+<table class="tbl"><thead><tr><th><input type="checkbox" id="ca"></th><th data-k="title">Titel</th><th data-k="artist">Artist</th><th data-k="key">Key</th><th data-k="loop">🔁</th><th data-k="tags">Tags</th></tr></thead><tbody id="tb"></tbody></table></section>
+<section id="m-set" class="mode" hidden style="padding:10px;flex-direction:row;gap:10px"><div class="pnl"><b>Songpool</b><ul id="pool"></ul></div><div class="pnl"><b>Setlist (hierher ziehen, Klick auf ✕ entfernt)</b><ul id="sl"></ul></div></section>
+</main>
+<div id="live"><div id="lbar"><button id="lp">⏮ Vorheriger Song (Bild↑)</button><div id="lcc"><button id="lb1" title="Eine Seite zurück">⏪</button><button id="lpl" title="AutoScroll Start/Pause (Leertaste)">▶</button><button id="lb2" title="Eine Seite vor">⏩</button><span id="lpg"></span></div><button id="ln">Nächster Song (Bild↓) ⏭</button></div>
+<div id="lset"><div><b id="lt"></b><label>Quelle <select id="lsrc"></select></label><label>Anzeige <select id="lvw"><option value="c">Akkorde + Text</option><option value="t">Nur Text</option><option value="g">Mit Griffbildern</option></select></label><label>Tempo <button id="lsm">−</button><b id="spv"></b><button id="lsp">+</button></label><label>Tonart <button id="lk">♭</button><b id="lsh">0</b><button id="lj">♯</button></label><label>Text <input type="number" id="sgfs" min="14" max="140"> px</label><label>Akkord <input type="number" id="sgcs" min="10" max="140"> px</label><button id="lgr">⚙ Darstellung</button><button id="lx">✕ Beenden</button></div><div id="lset2" hidden><label>Modus <select id="lm"><option value="s">Scroll (flüssig)</option><option value="p">Seitenweise</option></select></label><label>Akkord <input type="color" id="sgc"></label><label>Text <input type="color" id="sgt"></label><label>Hintergrund <input type="color" id="sgb"></label><label>Schriftart <select id="sgf"><option value="Arial,sans-serif">Arial</option><option value="Verdana,sans-serif">Verdana</option><option value="Georgia,serif">Georgia</option><option value="'Times New Roman',serif">Times</option><option value="'Courier New',monospace">Courier</option></select></label><label>Stärke <select id="sgw"><option value="400">Normal</option><option value="700">Fett</option></select></label><label>Zeile <input type="number" id="sgl" min="1" max="3" step=".05"></label><label>Abschnitt <input type="number" id="sgs" min="0" max="200"> px</label><label>Hinweise <input type="checkbox" id="sgh"></label><label>Hinweis-Text <input type="color" id="sghc"></label><label>Hinweis-Hintergrund <input type="color" id="sghb"></label></div></div>
+<div id="lsc"></div></div>
+<div id="md"><div class="box" id="x-ug"><h3>Ultimate-Guitar-Konverter</h3><p style="font-size:13px">Rohtext mit Akkorden über dem Text einfügen:</p><textarea id="ugi"></textarea><div class="mt-2 flex gap-2"><button id="ugc" class="pri">Konvertieren &amp; in Editor</button><button class="xc">Schließen</button></div></div>
+<div class="box" id="x-ch"><h3>Akkord-Editor</h3><input type="text" id="chn" placeholder="Name, z.B. Am"> <select id="cht"><option value="g">Gitarre</option><option value="k">Klavier</option></select><div id="cv" style="margin:10px 0"></div><button id="chs" class="pri">Speichern</button> <button class="xc">Schließen</button><div id="chl" style="font-size:13px;margin-top:8px"></div></div>
+<div class="box" id="x-mi"><h3>MIDI / Pedal Learn</h3><p id="mst" style="font-size:13px">Status…</p><div id="mal"></div><button class="xc">Schließen</button></div></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const ST=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},SV=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const SAMPLE='{title: Amazing Grace}\n{artist: Traditional}\n{key: G}\n{tempo: 80}\n\n{start_of_verse}\n[G]Amazing [G7]grace, how [C]sweet the [G]sound\nThat [G]saved a [Em]wretch like [D]me\n{end_of_verse}\n\n{comment: Chorus}\n{soc}\n[G]I once was [C]lost, but [G]now am [Em]found\n[G]Was blind but [D]now I [G]see\n{eoc}\n';
+let songs=ST('cp_songs',null)||[{id:1,text:SAMPLE}],cur=songs[0].id,shift=0,capo=0,nota='std',set=ST('cp_set',[]);
+let L=Object.assign({cols:1,fs:16,ls:1.3,cc:'#c2410c',tc:'#111827',land:false,ins:'Gitarre'},ST('cp_layout',{}));
+const PF=Object.assign({'Standard A4':{cols:1,fs:16,ls:1.3},'Kompakt':{cols:2,fs:11,ls:1.1},'Große Schrift':{cols:1,fs:24,ls:1.4}},ST('cp_prof',{}));
+const N=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],FL=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'],ix=n=>{const i=N.indexOf(n);return i<0?FL.indexOf(n):i};
+const CR=/^([A-G][#b]?)([^\/]*)(?:\/([A-G][#b]?))?$/,RO=['I','bII','II','bIII','III','IV','#IV','V','bVI','VI','bVII','VII'];
+const AL={soc:'sc',eoc:'ec',sov:'sv',eov:'ev',sob:'sb',eob:'eb',t:'title',st:'subtitle',a:'artist',c:'comment',ci:'comment',k:'key'};
+const OPEN=/^(C|D|E|G|A|Am|Dm|Em|E7|A7|D7|G7|C7|B7|Cmaj7|Am7|Em7|Dsus4|Asus4|Dsus2|Asus2|Fmaj7)$/;
+function parse(t){const meta={},it=[],ch=[],defs={};for(const raw of t.split(/\r?\n/)){const l=raw.trimEnd();if(l[0]==='#')continue;
+const d=/^\{\s*([\w-]+)\s*(?::|\s)?\s*(.*?)\s*\}$/.exec(l.trim());
+if(d){let n=d[1].toLowerCase(),sel='',neg=false;{const q=/^([a-z_]+)-(.+)$/.exec(n);if(q){n=q[1];sel=q[2];if(sel[0]==='!'){neg=true;sel=sel.slice(1)}}}if(sel&&!/^(define|chord)$/.test(n)&&INSM(sel)===neg)continue;if(n==='cb'&&!d[2].trim())n='colb';const V={comment:'c',c:'c',comment_italic:'i',ci:'i',comment_box:'b',cb:'b',highlight:'h'},PB={new_page:'np',np:'np',new_physical_page:'np',npp:'np',column_break:'cb2',colb:'cb2'};if(V[n]){it.push({k:'cm',v:d[2],t:V[n]});continue}if(PB[n]){it.push({k:PB[n]});continue}if(n==='image'){it.push({k:'img',v:d[2]});continue}n=AL[n]||n.replace(/^start_of_(.)\w*/,'s$1').replace(/^end_of_(.)\w*/,'e$1');if(/^[se][cvbtg]$/.test(n))it.push({k:n,v:d[2]});else if(n==='comment')it.push({k:'cm',v:d[2]});else if(n==='define'||n==='chord'){const nm=d[2].split(/\s+/)[0];if(nm)(defs[nm]=defs[nm]||[]).push(d[2]);if(n==='chord')it.push({k:'chd',v:d[2]})}else if(n==='tag'){(meta.tags=meta.tags||[]).push(d[2])}else if(n==='meta'){const q=/^(\S+)\s*(.*)$/.exec(d[2]);if(q){if(q[1]==='tag')(meta.tags=meta.tags||[]).push(q[2]);else meta[q[1]]=q[2]}}else meta[n]=d[2];continue}
+if(!l.trim()){it.push({k:'br'});continue}
+if(!l.includes('[')){it.push({k:'tx',v:l});continue}
+const p=l.split(/\[([^\]]*)\]/),segs=[['',p[0]]];for(let i=1;i<p.length;i+=2){segs.push([p[i],p[i+1]||'']);ch.push(p[i])}it.push({k:'ln',segs})}
+return{meta,it,ch,defs}}
+function keyOf(P){const k=P.meta.key||P.ch[0]||'C',m=CR.exec(k)||[0,'C',''];return{r:m[1],min:/^m(?!aj)/.test(m[2])}}
+function conv(c,n,flat,K,mode){const m=CR.exec(c);if(!m)return c;const nm=x=>(flat?FL:N)[(ix(x)+n+120)%12];
+const std=nm(m[1])+m[2]+(m[3]?'/'+nm(m[3]):'');if(mode==='std')return std;
+const mi=/^m(?!aj)/.test(m[2]),r=RO[(ix(m[1])-ix(K.r)+12)%12],rom=(mi?r.toLowerCase():r)+(mi?m[2].slice(1):m[2]);return mode==='rom'?rom:std+'\u0001'+rom}
+function pick(P,o){const K=keyOf(P);let k=(ix(K.r)+o.shift-o.capo+120)%12;if(K.min)k=(k+3)%12;const flat=[5,10,3,8,1].includes(k);return{K,s:c=>conv(c,o.shift-o.capo,flat,K,'std'),f:c=>c?conv(c,o.shift-o.capo,flat,K,o.nota):''}}
+function metaLine(m,o){const f=L.mf||{},a=[];[['artist',''],['subtitle',''],['composer','Musik: '],['lyricist','Text: '],['arranger','Arr.: '],['album','Album: '],['year','Jahr: '],['key','Key: '],['time','Takt: '],['tempo','Tempo: ','BPM'],['duration','Dauer: '],['capo','Capo: '],['copyright','© ']].forEach(([k,p,x])=>{if(f[k]&&m[k]&&(k!=='capo'||!o.capo))a.push(p+m[k]+(x?' '+x:''))});if(o.shift)a.push('Shift '+(o.shift>0?'+':'')+o.shift);if(o.capo)a.push('Capo '+o.capo);return a.join(' · ')}
+function build(text,o){const P=parse(text),{f,s}=pick(P,o),m=P.meta;
+const head='<div class="h1">'+esc(m.title||'Ohne Titel')+'</div><div class="mt">'+esc(metaLine(m,o))+'</div>'+(o.dins&&o.dins.length?dia(P,s,o.dins,o.th):'');
+const pair=(c,t)=>'<span class="p"><span class="c">'+cH(f(c))+'</span><span class="t">'+(esc(t)||'&nbsp;')+'</span></span>';
+const lineH=segs=>{let h='',w='';const fl=()=>{if(w){h+='<span class="w">'+w+'</span>';w=''}};for(const[c,t] of segs){if(!c&&!t)continue;(t.match(/\s*\S+\s*|\s+/g)||['']).forEach((p,i)=>{if(/^\s/.test(p)&&w)fl();w+=pair(i?'':c,p);if(/\s$/.test(p))fl()})}fl();return h};
+const grid=v=>{const t=v.trim().split(/\s+/),bar=x=>/^(\|[|:.\d]*|:\|[|:]*)$/.test(x);return'<div class="gr" style="grid-template-columns:'+t.map(x=>bar(x)?'auto':'minmax(0,1fr)').join(' ')+'">'+t.map(x=>bar(x)?'<span class="gb">'+esc(x)+'</span>':'<span class="gc">'+(CS.test(x)?cH(f(x)):esc(x))+'</span>').join('')+'</div>'};
+const chd=v=>{const nm=v.trim().split(/\s+/)[0],m=CR.exec(nm);if(!m)return'';const ins=INS().find(i=>i!=='Klavier')||'Gitarre',fr=dfr(v,ins)||voc(m[1],qn(m[2]),ins,nm);return'<div style="display:inline-block;text-align:center;font-size:.7em;font-weight:700;margin:.3em .6em .3em 0">'+gsv(fr,{c:L.cc,d:L.cc,p:L.cc,k:'#fff',kb:'#222'})+'<div style="color:'+L.cc+'">'+esc(nm)+'</div></div>'};
+const kv=(v,k)=>{const r=new RegExp(k+'=(?:"([^"]*)"|(\\S+))').exec(v);return r?(r[1]!==undefined?r[1]:r[2]):null};
+const img=v=>{const src=(kv(v,'src')||v.trim().split(/\s+/)[0]).replace(/"/g,'&quot;'),w=kv(v,'width'),h=kv(v,'height'),sc=kv(v,'scale'),al=(kv(v,'align')||(/\bcenter\b/.test(v)?'center':'left')).toLowerCase(),bd=kv(v,'border')||(/\bborder\b(?!=)/.test(v)?'1':null),bc=(kv(v,'bordercolor')||'#000').replace(/[^#\w(),. %-]/g,''),ti=kv(v,'title');return'<div style="text-align:'+(al==='right'||al==='center'?al:'left')+';margin:.4em 0"><div style="display:inline-block;max-width:100%"><img src="'+src+'" alt="" style="display:block;max-width:100%;'+(w?'width:'+w+'px;':'')+(h?'height:'+h+'px;':'')+(sc&&!w?'width:'+(100*sc)+'%;':'')+(bd?'border:'+(+bd||1)+'px solid '+bc+';box-sizing:border-box;':'')+'">'+(ti?'<div style="font-size:.75em;opacity:.7;text-align:center">'+esc(ti)+'</div>':'')+'</div></div>'};
+const G=[];let sec=null,par=null,lb=false;const put=h=>{(sec||(par=par||{l:[]})).l.push(h)},cl=()=>{if(par){G.push(par);par=null}},psh=g=>{while(g.l.length&&g.l[g.l.length-1].indexOf('<div style="height')===0)g.l.pop();G.push(g)};
+for(const x of P.it){if(x.k!=='br')lb=false;
+if(/^s[cvbtg]$/.test(x.k)){cl();if(sec)psh(sec);sec={c:x.k==='sc'?'ch':x.k==='st'?'sec tab':x.k==='sg'?'sec grid':'sec',g:x.k==='sg',l:x.v?['<div class="lab">'+esc(x.v)+'</div>']:[]}}
+else if(/^e[cvbtg]$/.test(x.k)){if(sec)psh(sec);sec=null}
+else if(x.k==='br'){if(lb)continue;lb=true;if(sec)sec.l.push('<div style="height:.7em"></div>');else cl()}
+else if(x.k==='np'||x.k==='cb2'){cl();if(sec){psh(sec);sec=null}G.push({brk:x.k==='np'?'np':'col'})}
+else if(x.k==='cm'){if(o.cm!==false)put('<div class="cm cm-'+x.t+'">'+esc(x.v)+'</div>')}
+else if(x.k==='img')put(img(x.v));else if(x.k==='chd')put(chd(x.v));
+else if(x.k==='tx')put(sec&&sec.g?grid(x.v):'<div class="ln"><span class="tx">'+esc(x.v)+'</span></div>');
+else put('<div class="ln">'+lineH(x.segs)+'</div>')}
+if(sec)psh(sec);cl();
+return{head,G,meta:m,grp:(g,l)=>'<div class="'+(g.c||'par')+'">'+l.join('')+'</div>'}}
+function paginate(B,W,H,pad,gap,cols,sty,cls){const cw=(W-2*pad-gap*(cols-1))/cols,ch=H-2*pad,ms=document.createElement('div');ms.className=cls||'';ms.style.cssText='position:absolute;left:-9999px;top:0;visibility:hidden;display:flow-root;font-family:Arial,sans-serif;'+sty;document.body.append(ms);
+const ht=(h,w)=>{ms.style.width=w+'px';ms.innerHTML=h;return ms.offsetHeight};
+const hh=ht(B.head,W-2*pad)+12,out=[];let page=[],col={h:0,it:[]};
+const cap=()=>out.length?ch:ch-hh,nxt=()=>{page.push(col);col={h:0,it:[]};if(page.length===cols){out.push(page);page=[]}};
+for(const g of B.G){
+if(g.brk){if(g.brk==='col'){if(col.it.length)nxt()}else{if(col.it.length)page.push(col);if(page.length)out.push(page);page=[];col={h:0,it:[]}}continue}
+const html=B.grp(g,g.l),full=ht(html,cw);
+if(col.h+full<=cap()){col.it.push(html);col.h+=full+8;continue}
+if(full<=cap()){nxt();col.it.push(html);col.h+=full+8;continue}
+let buf=[],bh=0;const fl=()=>{if(buf.length){col.it.push(B.grp(g,buf));col.h+=bh;buf=[];bh=0}};
+for(const l of g.l){const hl=ht(l,cw);if(col.h+bh+hl>cap()&&(buf.length||col.it.length)){fl();nxt()}buf.push(l);bh+=hl}fl()}
+if(col.it.length)page.push(col);if(page.length)out.push(page);if(!out.length)out.push([{it:[]}]);ms.remove();return out}
+function ph(out,B,cols,gap,cls,st){return out.map((pg,i)=>'<div class="'+cls+'" style="'+st+'">'+(i?'':B.head)+'<div style="display:grid;grid-template-columns:repeat('+cols+',1fr);gap:'+gap+'px">'+pg.map(c=>'<div>'+c.it.join('')+'</div>').join('')+'</div><div class="pn">'+(i+1)+'/'+out.length+'</div></div>').join('')}
+function pagesA4(text,o){const B=build(text,o),M=B.meta,W=L.land?1123:794,H=L.land?794:1123,cols=+(M.columns||M.col)||o.cols||1,gap=24,ex=dirStyle(M),out=paginate(B,W,H,40,gap,cols,shCss()+ex);NP=out.length;return ph(out,B,cols,gap,'pg','width:'+W+'px;height:'+H+'px'+ex)}
+const esc=s=>String(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const song=()=>songs.find(s=>s.id===cur)||songs[0],info=s=>{const m=parse(s.text).meta;const tgs=m.tags||[],lp=tgs.some(x=>/^(loop|loopable|looper)$/i.test(x.trim()))||/^(1|true|yes|ja|on)$/i.test(m.loop||'');return{title:m.title||'Ohne Titel',artist:m.artist||'',key:m.key||'',tags:tgs.join(', '),loop:lp?'🔁':''}};
+const save=()=>{SV('cp_songs',songs);SV('cp_set',set);SV('cp_layout',L);fsSync()};
+const opt=()=>({shift,capo,nota,cols:L.cols,dins:INS(),cm:L.cm!==false});
+function draw(){const sh=$('#sheet'),W=L.land?1123:794;sh.style.cssText='width:'+W+'px;font-size:'+L.fs+'px;--lh:'+L.ls+';--cc:'+L.cc+';color:'+L.tc+';font-family:'+L.ff+';font-weight:'+L.fw+';--cs:'+L.cfs+'px;--hl:'+(L.hl||'#fde047')+';--sg:'+L.sg+'px';sh.innerHTML=pagesA4(song().text,opt());$('#sh').textContent=shift;$('#cn').textContent=L.cols;fit()}
+let zm=ST('cp_zm','page'),NP=1;function fit(){const pv=$('#pv'),W=L.land?1123:794,H=L.land?794:1123,T=NP*H+(NP-1)*16,aw=(pv.clientWidth-20)/W,ah=(pv.clientHeight-20)/H,s=zm==='page'?Math.min(aw,ah,2):zm==='width'?Math.min(aw,3):zm/100;$('#sheet').style.transform='scale('+s+')';$('#wrap').style.cssText='width:'+W*s+'px;height:'+T*s+'px';const z=$('#zs');if(z)z.value=String(zm);const l=$('#zl');if(l)l.textContent=Math.round(s*100)+'%'}
+addEventListener('resize',fit);new ResizeObserver(fit).observe($('#pv'));
+// Modi
+function mode(m){if(m==='live'){startLive();return}$$('.mode').forEach(e=>e.hidden=e.id!=='m-'+m);$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));if(m==='editor'){$('#ed').value=song().text;draw()}if(m==='lib')lib();if(m==='set')setUI()}
+$$('#nav button').forEach(b=>b.onclick=()=>mode(b.dataset.m));
+$('#ed').oninput=e=>{song().text=e.target.value;save();draw()};
+$('#th').onclick=()=>{const r=document.documentElement,d=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0b0f17';r.dataset.theme=d?'light':'dark'};
+$('#tm').onclick=()=>{shift--;draw()};$('#tp').onclick=()=>{shift++;draw()};
+$('#cp').innerHTML=[...Array(12).keys()].map(i=>'<option>'+i+'</option>').join('');$('#cp').onchange=e=>{capo=+e.target.value;draw()};
+$('#ac').onclick=()=>{const P=parse(song().text),u=[...new Set(P.ch)];if((INS().length===1&&INS()[0]==='Klavier')||!u.length)return;let best=0,bs=-1;for(let c=0;c<=9;c++){const sc=u.reduce((a,x)=>{const m=CR.exec(x);return a+(m&&OPEN.test(N[(ix(m[1])+shift-c+120)%12]+m[2])?1:0)},0);if(sc>bs){bs=sc;best=c}}capo=best;$('#cp').value=best;draw()};
+$('#nt').onchange=e=>{nota=e.target.value;draw()};
+$('#cm').onclick=()=>{L.cols=Math.max(1,L.cols-1);save();draw()};$('#cpl').onclick=()=>{L.cols=Math.min(4,L.cols+1);save();draw()};
+$('#or').onclick=()=>{L.land=!L.land;save();draw()};
+['fs','ls','cc','tc'].forEach(k=>{$('#'+k).value=L[k];$('#'+k).oninput=e=>{L[k]=k==='cc'||k==='tc'?e.target.value:+e.target.value;save();draw()}});
+$('#in').value=L.ins;$('#in').onchange=e=>{L.ins=e.target.value;save()};
+function pfs(){$('#pf').innerHTML=Object.keys(PF).map(k=>'<option>'+esc(k)+'</option>').join('')}pfs();
+$('#pf').onchange=e=>{Object.assign(L,PF[e.target.value]);['fs','ls'].forEach(k=>$('#'+k).value=L[k]);save();draw()};
+$('#ps').onclick=()=>{const n=$('#pn').value.trim();if(!n)return;const c=ST('cp_prof',{});c[n]={cols:L.cols,fs:L.fs,ls:L.ls,cc:L.cc,tc:L.tc,land:L.land};SV('cp_prof',c);PF[n]=c[n];pfs();$('#pf').value=n};
+// Ribbon (Office-Stil): vorhandene Bedienelemente werden in Reiter einsortiert
+(()=>{const bar=$('#bar'),rb=document.createElement('div');rb.id='rb';rb.innerHTML='<div id="rt"></div><div id="rp"></div>';bar.before(rb);
+const D=(...a)=>{const d=document.createElement('div');a.forEach(e=>d.append(e));return d},G=i=>{const e=$(i);return D(e.closest('label')||e)};
+const vw=D(bar.firstElementChild),zo=document.createElement('div');zo.innerHTML='<span>Zoom</span><button id="zo">−</button><select id="zs"><option value="page">Seite einpassen</option><option value="width">Breite einpassen</option>'+[50,75,100,125,150,200,300].map(z=>'<option value="'+z+'">'+z+' %</option>').join('')+'</select><button id="zi">+</button><b id="zl"></b>';
+const sk=document.createElement('div');sk.innerHTML='<button id="sk">⇅ Nebeneinander/Untereinander</button>';
+const T={'Ansicht':[vw,zo,sk],'Tonart':[G('#tm'),G('#cp'),G('#nt')],'Layout':[G('#cm'),G('#pf'),G('#or'),G('#in')],'Format':[G('#fs'),G('#ls'),G('#cc'),G('#tc')],'Werkzeuge':[G('#b-ug'),G('#b-ch'),G('#b-mi'),G('#b-pdf')]};
+const rt=$('#rt'),rp=$('#rp');Object.keys(T).forEach(n=>{const p=document.createElement('div');p.className='rpn';p.dataset.t=n;T[n].forEach(g=>p.append(g));rp.append(p);const b=document.createElement('button');b.textContent=n;b.dataset.t=n;rt.append(b)});
+rt.insertAdjacentHTML('beforeend','<button id="rc" style="margin-left:auto" title="Menüband ein/aus">⌃</button>');bar.remove();
+const show=n=>{$$('.rpn').forEach(p=>p.hidden=p.dataset.t!==n);$$('#rt button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===n));rp.hidden=false;$('#rc').textContent='⌃';SV('cp_tab',n);fit()};
+rt.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='rc'){rp.hidden=!rp.hidden;b.textContent=rp.hidden?'⌄':'⌃';fit();return}if(!rp.hidden&&b.classList.contains('on')){rp.hidden=true;$('#rc').textContent='⌄';fit();return}show(b.dataset.t)};
+$('#zs').onchange=e=>{zm=isNaN(e.target.value)?e.target.value:+e.target.value;SV('cp_zm',zm);fit()};
+const zst=d=>{const c=Math.round(parseFloat($('#sheet').style.transform.slice(6))*100);zm=Math.max(25,Math.min(400,c+d));SV('cp_zm',zm);fit()};
+$('#zo').onclick=()=>zst(-10);$('#zi').onclick=()=>zst(10);
+$('#pv').addEventListener('wheel',e=>{if(e.ctrlKey){e.preventDefault();zst(e.deltaY<0?10:-10)}},{passive:false});
+$('#sk').onclick=()=>{$('#split').classList.toggle('stk');SV('cp_stk',$('#split').classList.contains('stk'));fit()};
+if(ST('cp_stk',false))$('#split').classList.add('stk');
+show(ST('cp_tab','Ansicht'));})();
+// Ansicht: Code / Split / Vorschau + verschiebbarer Teiler
+let vm=ST('cp_vm','split'),ratio=ST('cp_ratio',.5);
+function setVm(v){vm=v;SV('cp_vm',v);$('#ed').style.display=v==='pv'?'none':'';$('#pv').style.display=v==='code'?'none':'';$('#dv').style.display=v==='split'?'':'none';$('#ed').style.flex=v==='split'?'0 0 '+ratio*100+'%':'1 1 100%';$$('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));fit()}
+$$('[data-v]').forEach(b=>b.onclick=()=>setVm(b.dataset.v));
+$('#dv').onpointerdown=e=>{e.preventDefault();const sp=$('#split'),col=getComputedStyle(sp).flexDirection==='column',mv=ev=>{const r=sp.getBoundingClientRect();ratio=Math.min(.85,Math.max(.15,col?(ev.clientY-r.top)/r.height:(ev.clientX-r.left)/r.width));$('#ed').style.flex='0 0 '+ratio*100+'%';fit()},up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);SV('cp_ratio',ratio)};addEventListener('pointermove',mv);addEventListener('pointerup',up)};
+setVm(vm);
+// Dual-Anzeige, Akkordbilder
+const cH=s=>{const[a,b]=s.split('\u0001');return esc(a)+(b?'<span style="font-size:.68em;font-weight:400;opacity:.85"> ('+esc(b)+')</span>':'')};
+const pc=s=>{const[a,b]=s.split('\u0001');return b?[{text:a},{text:' ('+b+')',fontSize:Math.min(L.fs,14)*.7,bold:false}]:a};
+const OD={C:'x32010',D:'xx0232',E:'022100',G:'320003',A:'x02220',Am:'x02210',Dm:'xx0231',Em:'022000',E7:'020100',A7:'x02020',D7:'xx0212',G7:'320001',C7:'x32310',B7:'x21202',Cmaj7:'x32000',Am7:'x02010',Em7:'020000',Dsus4:'xx0233',Asus4:'x02230',Dsus2:'xx0230',Asus2:'x02200',Fmaj7:'xx3210'};
+const GE={'':[0,2,2,1,0,0],m:[0,2,2,0,0,0],'7':[0,2,0,1,0,0],m7:[0,2,0,0,0,0],maj7:[0,2,1,1,0,0],sus4:[0,2,2,2,0,0]},GA={'':[-1,0,2,2,2,0],m:[-1,0,2,2,1,0],'7':[-1,0,2,0,2,0],m7:[-1,0,2,0,1,0],maj7:[-1,0,2,1,2,0],sus4:[-1,0,2,2,3,0],sus2:[-1,0,2,2,0,0]};
+function gshape(r,q){if(OD[r+q])return[...OD[r+q]].map(c=>c==='x'?-1:+c);const mi=/^m(?!aj)/.test(q),k=GE[q]||GA[q]?q:mi?'m':'',fE=(ix(r)-4+12)%12,fA=(ix(r)-9+12)%12,useA=GA[k]&&(!GE[k]||fA<fE),b=useA?fA:fE;return(useA?GA[k]:GE[k]).map(v=>v<0?v:v+b)}
+const PQ={'':[0,4,7],m:[0,3,7],'5':[0,7],'7':[0,4,7,10],m7:[0,3,7,10],maj7:[0,4,7,11],sus4:[0,5,7],sus2:[0,2,7],'7sus4':[0,5,7,10],dim:[0,3,6],dim7:[0,3,6,9],m7b5:[0,3,6,10],aug:[0,4,8],'6':[0,4,7,9],m6:[0,3,7,9],'9':[0,4,7,10,14],maj9:[0,4,7,11,14],m9:[0,3,7,10,14],add9:[0,4,7,14]},QA={M7:'maj7',min:'m',mi:'m',M:'',maj:'',min7:'m7','-':'m'},qn=q=>{q=QA[q]!==undefined?QA[q]:q;return PQ[q]?q:(/^m(?!aj)/.test(q)?'m':'')};
+const TU={Gitarre:[4,9,2,7,11,4],Ukulele:[7,0,4,9]},OV=ST('cp_ovr',{}),GC=new Map(),TH={c:'#333',d:'#222',p:'#c2410c',k:'#fff',kb:'#222'};
+function gen(r,q,ins){const tu=TU[ins]||TU.Gitarre,n=tu.length,R=ix(r),st=new Set(PQ[q].map(i=>(R+i)%12)),need=new Set(st);if(st.size>3)need.delete((R+7)%12);const res=[],seen=new Set();
+for(let b=0;b<=11;b++){const opts=tu.map(t=>{const o=[-1];for(let f=b;f<=b+3;f++)if(st.has((t+f)%12))o.push(f);if(b&&st.has(t%12))o.push(0);return o});
+const test=cur=>{const sd=cur.filter(v=>v>=0);if(sd.length<(n>4?4:3))return;const pcs=new Set(cur.map((v,i)=>v<0?-1:(tu[i]+v)%12));if(![...need].every(p=>pcs.has(p)))return;if(n>4){const i0=cur.findIndex(v=>v>=0);if((tu[i0]+cur[i0])%12!==R)return}const k=cur.join();if(seen.has(k))return;seen.add(k);const fr=sd.filter(v=>v>0);res.push({a:[...cur],sc:(fr.length?Math.min(...fr):0)*3+cur.filter(v=>v<0).length*2+(fr.length?Math.max(...fr)-Math.min(...fr):0)*2-cur.filter(v=>v===0).length})};
+const rec=(i,cur,sd)=>{if(i===n){test(cur);return}for(const v of opts[i]){if(v<0&&sd)continue;cur.push(v);rec(i+1,cur,sd||v>=0);cur.pop()}};rec(0,[],false)}
+return res.sort((x,y)=>x.sc-y.sc).slice(0,30).map(x=>x.a)}
+function pvo(r,q){const R=ix(r),base=PQ[q].map(i=>R+i),out=[],seen=new Set(),fit=w=>{w=[...w].sort((a,b)=>a-b);while(w[0]>=12)w=w.map(x=>x-12);return w},add=w=>{w=fit(w);if(Math.max(...w)>23)return;const k=w.join();if(!seen.has(k)){seen.add(k);out.push(w)}};
+let v=base;for(let k=0;k<base.length;k++){add(v);v=[...v.slice(1),v[0]+12]}add([base[0],...base.slice(1).map(x=>x+12)]);add([base[0],base[0]+12,...base.slice(1)]);if(!out.length)out.push(base.map(x=>x%12).sort((a,b)=>a-b));return out}
+function alts(r,q,ins){const k=ins+r+q;if(GC.has(k))return GC.get(k);let l;if(ins==='Klavier')l=pvo(r,q);else{l=gen(r,q,ins);if(ins!=='Ukulele'&&(OD[r+q]||GE[q]||GA[q])){const d=gshape(r,q);l=[d,...l.filter(x=>x.join()!==d.join())]}}GC.set(k,l);return l}
+const voc=(r,q,ins,c)=>OV[ins+'|'+c]||alts(r,q,ins)[0]||(ins==='Klavier'?[0,4,7]:[-1,-1,-1,-1,-1,-1]);
+function gsv(a,t){t=t||TH;const n=a.length,sp=n>5?9:13,w=(n-1)*sp+20,fr=a.filter(v=>v>0),mn=fr.length?Math.min(...fr):1,b=Math.max(...fr,0)<=4?1:mn;let s='<svg viewBox="0 0 '+w+' 74" width="'+(w*.95*(L.dsz||100)/100)+'">';for(let i=0;i<n;i++)s+='<path d="M'+(10+i*sp)+' 16V68" stroke="'+t.c+'" stroke-width=".8"/>';for(let f=0;f<=4;f++)s+='<path d="M10 '+(16+f*13)+'H'+(10+(n-1)*sp)+'" stroke="'+t.c+'" stroke-width="'+(f==0&&b==1?3:.8)+'"/>';
+a.forEach((v,i)=>{const x=10+i*sp;if(v<0)s+='<text x="'+x+'" y="11" font-size="9" text-anchor="middle" fill="'+t.c+'">×</text>';else if(v==0)s+='<circle cx="'+x+'" cy="8" r="3" fill="none" stroke="'+t.c+'"/>';else s+='<circle cx="'+x+'" cy="'+(9.5+(v-b+1)*13)+'" r="4.2" fill="'+t.d+'"/>'});return s+(b>1?'<text x="0" y="29" font-size="8" fill="'+t.c+'">'+b+'</text>':'')+'</svg>'}
+function psv(nt,t){t=t||TH;const W=[0,2,4,5,7,9,11],B={1:0,3:1,6:3,8:4,10:5};let s='<svg viewBox="0 0 168 46" width="'+(150*(L.dsz||100)/100)+'">';for(let o=0;o<2;o++)W.forEach((n,i)=>s+='<rect x="'+(o*84+i*12)+'" y="0" width="12" height="46" fill="'+(nt.includes(o*12+n)?t.p:t.k)+'" stroke="'+t.c+'"/>');for(let o=0;o<2;o++)Object.keys(B).forEach(n=>s+='<rect x="'+((o*7+B[n]+1)*12-3.5)+'" y="0" width="7" height="28" fill="'+(nt.includes(o*12+(+n))?t.p:t.kb)+'" stroke="'+t.c+'" stroke-width=".5"/>');return s+'</svg>'}
+function dfr(d,ins){const fm=/frets\s+((?:[xX\d]+\s*)+)/.exec(d),bm=/base-fret\s+(\d+)/.exec(d);if(!fm)return null;const b=bm?+bm[1]:1,a=fm[1].trim().split(/\s+/).map(v=>/x/i.test(v)?-1:+v>0?+v+b-1:0);return a.length===(TU[ins]||[]).length?a:null}
+function dia(P,s,list,t){t=t||TH;const u=[...new Set(P.ch.map(c=>s(c)))];return list.map(ins=>'<div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:'+L.dgp+'px;margin:0 0 12px">'+(list.length>1?'<div style="font-size:.6em;font-weight:700;color:'+t.c+';width:100%;margin-bottom:-6px">'+ins+'</div>':'')+u.map(c=>{const m=CR.exec(c);if(!m)return'';const q=qn(m[2]),v=(ins!=='Klavier'&&P.defs&&(P.defs[c]||[]).map(d=>dfr(d,ins)).find(Boolean))||voc(m[1],q,ins,c);return'<div data-ch="'+esc(c)+'" data-ins="'+ins+'" title="Klicken für Alternativen" style="text-align:center;font-size:.7em;font-weight:700;cursor:pointer;color:'+t.c+'">'+(ins==='Klavier'?psv(v,t):gsv(v,t))+'<div>'+esc(c)+'</div></div>'}).join('')+'</div>').join('')}
+function vcOpen(c,ins){const m=CR.exec(c);if(!m)return;const q=qn(m[2]),l=alts(m[1],q,ins).slice(0,40);$('#vct').textContent=ins+': Griff für '+c+' ('+l.length+' Varianten)';$('#vcl').innerHTML=l.map((v,i)=>'<div data-i="'+i+'" style="cursor:pointer;padding:4px;border:1px solid var(--bd);border-radius:8px;background:#fff">'+(ins==='Klavier'?psv(v,TH):gsv(v,TH))+'</div>').join('');
+$$('#vcl [data-i]').forEach(d=>d.onclick=()=>{OV[ins+'|'+c]=l[+d.dataset.i];SV('cp_ovr',OV);$('#md').classList.remove('show');draw()});$('#vcr').onclick=()=>{delete OV[ins+'|'+c];SV('cp_ovr',OV);$('#md').classList.remove('show');draw()};mdl('x-vc')}
+$('#md').insertAdjacentHTML('beforeend','<div class="box" id="x-vc"><h3 id="vct"></h3><p style="font-size:13px">Variante wählen (gilt für alle Songs):</p><div id="vcl" style="display:flex;flex-wrap:wrap;gap:8px"></div><div class="flex gap-2" style="margin-top:12px"><button id="vcr">Automatisch</button><button id="vcx">Schließen</button></div></div>');$('#vcx').onclick=()=>$('#md').classList.remove('show');
+$('#sheet').addEventListener('click',e=>{const d=e.target.closest('[data-ch]');if(d)vcOpen(d.dataset.ch,d.dataset.ins)});
+document.querySelector('.rpn[data-t=Layout]').insertAdjacentHTML('beforeend','<div><label><input type="checkbox" id="dg"> Akkordbilder</label></div>');$('#dg').checked=L.dia!==false;$('#dg').onchange=e=>{L.dia=e.target.checked;save();draw()};
+$('#in').addEventListener('change',draw);
+// Benannte Setlists + Backup
+const SETS=ST('cp_sets',{});
+function ssr(){$('#ss').innerHTML='<option value="">– gespeicherte Setlists –</option>'+Object.keys(SETS).map(k=>'<option>'+esc(k)+'</option>').join('')}
+$('#sl').parentNode.insertAdjacentHTML('afterbegin','<div class="flex gap-1 flex-wrap mb-2"><select id="ss"></select><input type="text" id="sn" placeholder="Name" size="10"><button id="sv1" title="Speichern">💾</button><button id="sx" title="Löschen">🗑</button></div>');ssr();
+$('#ss').onchange=e=>{const k=e.target.value;if(!k)return;set=SETS[k].filter(i=>songs.some(s=>s.id===i));$('#sn').value=k;save();rs()};
+$('#sv1').onclick=()=>{const n=$('#sn').value.trim();if(!n)return;SETS[n]=[...set];SV('cp_sets',SETS);ssr();$('#ss').value=n};
+$('#sx').onclick=()=>{const k=$('#ss').value;if(!k)return;delete SETS[k];SV('cp_sets',SETS);ssr()};
+$('#bj').textContent='⬇ Backup';$('#bj').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({v:1,songs,set,sets:SETS,prof:ST('cp_prof',{}),chords:ST('cp_chords',[]),layout:L})],{type:'application/json'}));a.download='chordpro-backup.json';a.click()};
+$('#bj').insertAdjacentHTML('afterend','<button id="br">⬆ Restore</button><input type="file" id="fr" accept=".json" hidden>');
+$('#br').onclick=()=>$('#fr').click();
+$('#fr').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(Array.isArray(d)||!d.songs)return;const ids=new Set(songs.map(s=>s.id));d.songs.forEach(s=>{if(!ids.has(s.id))songs.push(s)});set=d.set||set;Object.assign(SETS,d.sets||{});SV('cp_sets',SETS);SV('cp_prof',Object.assign(ST('cp_prof',{}),d.prof||{}));SV('cp_chords',d.chords||ST('cp_chords',[]));save();location.reload()}catch(x){}};
+// Bibliothek
+function lib(){const q=$('#q').value.toLowerCase();$('#tb').innerHTML=songs.map(s=>({s,i:info(s)})).filter(x=>(x.i.title+x.i.artist+x.i.tags).toLowerCase().includes(q)).sort(srt).map(x=>'<tr data-id="'+x.s.id+'"><td><input type="checkbox" class="sel" value="'+x.s.id+'"></td><td>'+esc(x.i.title)+(x.s.file?' <small style="opacity:.6">📄 '+esc(x.s.file)+'</small>':'')+'</td><td>'+esc(x.i.artist)+'</td><td>'+esc(x.i.key)+'</td><td>'+x.i.loop+'</td><td>'+esc(x.i.tags)+'</td></tr>').join('');
+$$('#tb tr').forEach(r=>r.onclick=e=>{if(e.target.type==='checkbox')return;cur=+r.dataset.id;shift=0;capo=0;$('#cp').value=0;mode('editor')})}
+const sel=()=>$$('.sel:checked').map(c=>+c.value);$('#q').oninput=lib;$('#ca').onchange=e=>$$('.sel').forEach(c=>c.checked=e.target.checked);
+$('#nw').onclick=()=>{const id=Date.now();songs.push({id,text:'{title: Neuer Song}\n{artist: }\n{key: C}\n\n[C]Text [G]hier'});cur=id;save();mode('editor')};
+$('#bd').onclick=()=>{const s=sel();if(!s.length||songs.length<=s.length)return;songs=songs.filter(x=>!s.includes(x.id));set=set.filter(x=>!s.includes(x));cur=songs[0].id;save();lib()};
+$('#bs').onclick=()=>{sel().forEach(i=>set.push(i));save();mode('set')};
+$('#bj').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(songs)],{type:'application/json'}));a.download='songs.json';a.click()};
+$('#fi').onchange=async e=>{for(const f of e.target.files){const t=await f.text();if(f.name.endsWith('.json')){try{JSON.parse(t).forEach((s,i)=>songs.push({id:Date.now()+i,text:s.text||String(s)}))}catch(x){}}else songs.push({id:Date.now()+Math.random(),text:t})}save();lib()};
+$('#bp').onclick=()=>pdf(sel().map(i=>songs.find(s=>s.id===i)));$('#b-pdf').onclick=()=>pdf([song()],true);
+async function pdf(list,useCur){if(!list.length||!window.pdfMake)return;const W=L.land?1123:794,H=L.land?794:1123,K=.75,content=[],box=document.createElement('div');box.style.cssText=shCss()+';position:absolute;left:-99999px;top:0';document.body.append(box);let first=true;
+for(const sg of list){const o=useCur?opt():{shift:0,capo:0,nota:'std',cols:L.cols,dins:INS(),cm:L.cm!==false};box.innerHTML=pagesA4(sg.text,o);
+for(const pg of box.querySelectorAll('.pg')){const r0=pg.getBoundingClientRect();content.push({text:' ',fontSize:1,pageBreak:first?undefined:'before'});first=false;
+const add=(n,x,y)=>{n.absolutePosition={x:(x-r0.left)*K,y:(y-r0.top)*K};content.push(n)};
+pg.querySelectorAll('.ch').forEach(e=>{const r=e.getBoundingClientRect();add({canvas:[{type:'rect',x:0,y:0,w:3,h:r.height*K,color:L.cc}]},r.left,r.top)});
+pg.querySelectorAll('.cm').forEach(e=>{const r=e.getBoundingClientRect(),cs=getComputedStyle(e),bg=cs.backgroundColor,cv=[];if(bg!=='rgba(0, 0, 0, 0)')cv.push({type:'rect',x:0,y:0,w:r.width*K,h:r.height*K,color:hex(bg)});if(parseFloat(cs.borderTopWidth)>0)cv.push({type:'rect',x:0,y:0,w:r.width*K,h:r.height*K,lineWidth:.75,lineColor:hex(cs.borderTopColor)});if(cv.length)add({canvas:cv},r.left,r.top)});
+pg.querySelectorAll('svg').forEach(e=>{const r=e.getBoundingClientRect(),c=e.cloneNode(true);c.setAttribute('xmlns','http://www.w3.org/2000/svg');c.setAttribute('width',r.width*K);c.setAttribute('height',r.height*K);add({svg:c.outerHTML,width:r.width*K},r.left,r.top)});
+pg.querySelectorAll('img').forEach(e=>{try{const cv=document.createElement('canvas');cv.width=e.naturalWidth;cv.height=e.naturalHeight;cv.getContext('2d').drawImage(e,0,0);const r=e.getBoundingClientRect();add({image:cv.toDataURL('image/png'),width:r.width*K,height:r.height*K},r.left,r.top);const ic=getComputedStyle(e);if(parseFloat(ic.borderTopWidth)>0)add({canvas:[{type:'rect',x:0,y:0,w:r.width*K,h:r.height*K,lineWidth:parseFloat(ic.borderTopWidth)*K,lineColor:hex(ic.borderTopColor)}]},r.left,r.top)}catch(x){}});
+const tw=document.createTreeWalker(pg,NodeFilter.SHOW_TEXT);let n;while(n=tw.nextNode()){const p=n.parentElement;if(p.closest('svg'))continue;const cs=getComputedStyle(p);const mono=/mono|courier|consolas|menlo/i.test(cs.fontFamily);for(const l of tl(n)){const bs={noWrap:true,fontSize:parseFloat(cs.fontSize)*K,bold:+cs.fontWeight>=600,italics:cs.fontStyle==='italic',color:hex(cs.color)};if(mono)l.ch.forEach(([c,x])=>{if(c.trim())add(Object.assign({text:c},bs),x,l.y)});else add(Object.assign({text:l.t.replace(/\u00a0/g,' ')},bs),l.x,l.y)}}}}
+box.remove();pdfMake.createPdf({pageSize:{width:W*K,height:H*K},pageMargins:[0,0,0,0],content}).download('chordpro.pdf');draw()}
+// Setlist
+function setUI(){$('#pool').innerHTML=songs.map(s=>'<li data-id="'+s.id+'">'+esc(info(s).title)+'</li>').join('');rs()}
+function rs(){$('#sl').innerHTML=set.map(i=>{const s=songs.find(x=>x.id===i);return s?'<li data-id="'+i+'">'+esc(info(s).title)+' <b class="rm" style="float:right">✕</b></li>':''}).join('');$$('.rm').forEach(b=>b.onclick=()=>{b.parentNode.remove();rd()})}
+function rd(){set=$$('#sl li').map(l=>+l.dataset.id);save()}
+new Sortable($('#pool'),{group:{name:'s',pull:'clone',put:false},sort:false});
+new Sortable($('#sl'),{group:'s',animation:150,onAdd:e=>{e.item.insertAdjacentHTML('beforeend',' <b class="rm" style="float:right">✕</b>');rd();rs()},onSort:rd});
+// Einfügen-Reiter + neuer Song mit Gerüst
+(()=>{const ed=$('#ed'),p=document.createElement('div');p.className='rpn';p.dataset.t='Einfügen';p.hidden=true;
+const ins=(t,c)=>{const a=ed.selectionStart,b=ed.selectionEnd,v=ed.value,pre=a&&v[a-1]!=='\n'&&t[0]==='{'?'\n':'';ed.value=v.slice(0,a)+pre+t+v.slice(b);const q=a+pre.length+(c==null?t.length:c);ed.focus();ed.setSelectionRange(q,q);ed.dispatchEvent(new Event('input'))};
+const sc=(t,l)=>()=>{const n=(ed.value.match(new RegExp('\\{start_of_'+t+': '+l,'g'))||[]).length+1,h='{start_of_'+t+': '+l+(l==='Strophe'?' '+n:'')+'}\n';ins(h+'\n{end_of_'+t+'}\n',h.length)};
+const mk=arr=>{const d=document.createElement('div');arr.forEach(([n,fn])=>{const b=document.createElement('button');b.textContent=n;b.onclick=fn;d.append(b)});return d};
+p.append(mk([['Strophe',sc('verse','Strophe')],['Refrain',sc('chorus','Refrain')],['Bridge',sc('bridge','Bridge')],['Intro',sc('verse','Intro')],['Pre-Chorus',sc('verse','Pre-Chorus')],['Outro',sc('verse','Outro')]]),mk([['Kommentar',()=>ins('{comment: }\n',10)],['[ ] Akkord',()=>ins('[]',1)]]),mk([['Titel',()=>ins('{title: }\n',8)],['Artist',()=>ins('{artist: }\n',9)],['Key',()=>ins('{key: }\n',6)],['Tempo',()=>ins('{tempo: }\n',8)],['Capo',()=>ins('{capo: }\n',7)]]));
+$('#rp').append(p);const tb=document.createElement('button');tb.textContent='Einfügen';tb.dataset.t='Einfügen';$('#rt button[data-t="Werkzeuge"]').before(tb);
+$('#nw').onclick=()=>{const id=Date.now();songs.push({id,text:'{title: Neuer Song}\n{artist: }\n{key: C}\n{tempo: 100}\n\n{start_of_verse: Strophe 1}\n\n{end_of_verse}\n\n{start_of_chorus: Refrain}\n\n{end_of_chorus}\n'});cur=id;shift=0;capo=0;save();mode('editor');if(!tb.classList.contains('on')||$('#rp').hidden)tb.click()}})();
+// Erweiterte Layout-Optionen
+L=Object.assign({ff:'Arial,sans-serif',fw:'400',sg:.6,dsz:100,dgp:14},L);
+document.querySelector('.rpn[data-t=Layout]').insertAdjacentHTML('beforeend','<div><label>Bildgröße <input type="range" id="dsz" min="50" max="220"></label><label>Abstand <input type="range" id="dgp" min="0" max="60"></label></div>');
+document.querySelector('.rpn[data-t=Format]').insertAdjacentHTML('beforeend','<div><label>Schriftart <select id="ff"><option value="Arial,sans-serif">Arial</option><option value="Verdana,sans-serif">Verdana</option><option value="Georgia,serif">Georgia</option><option value="\'Times New Roman\',serif">Times</option><option value="\'Courier New\',monospace">Courier</option></select></label><label>Stärke <select id="fw"><option value="400">Normal</option><option value="700">Fett</option></select></label><label>Abschnitte <input type="range" id="sg" min="0" max="3" step=".1"></label></div>');
+['ff','fw','sg','dsz','dgp'].forEach(k=>{const e=$('#'+k);e.value=L[k];e.oninput=()=>{L[k]=e.type==='range'?+e.value:e.value;save();draw()}});
+// Dateien: echte .cho-Dateien in einem Ordner (File System Access API) + Fallback Import/Export
+const FSOK=!!window.showDirectoryPicker;let DH=null,ft;
+const slug=t=>(t||'song').replace(/[\\/:*?"<>|]+/g,'').trim().slice(0,60)||'song';
+function fname(sg){if(sg.file)return sg.file;const b=slug(info(sg).title);let n=b+'.cho',i=2;while(songs.some(x=>x!==sg&&x.file===n))n=b+' ('+i+++').cho';return sg.file=n}
+function idb(fn){return new Promise((ok,no)=>{const r=indexedDB.open('cp',1);r.onupgradeneeded=()=>r.result.createObjectStore('h');r.onsuccess=()=>{const t=r.result.transaction('h','readwrite'),q=fn(t.objectStore('h'));t.oncomplete=()=>ok(q&&q.result);t.onerror=()=>no(t.error)};r.onerror=()=>no(r.error)})}
+const fsMsg=t=>{const e=$('#fss');if(e)e.textContent=t;fsBadge()};
+async function fsWrite(sg){if(!DH)return;try{const h=await DH.getFileHandle(fname(sg),{create:true}),w=await h.createWritable();await w.write(sg.text);await w.close();sg._w=sg.text;fsMsg('📁 '+DH.name+' – gespeichert '+new Date().toLocaleTimeString())}catch(e){fsMsg('Schreibfehler: '+e.name)}}
+function fsSync(){if(!DH)return;clearTimeout(ft);ft=setTimeout(()=>songs.forEach(sg=>{if(sg._w!==sg.text)fsWrite(sg)}),700)}
+async function fsLoad(){const files={};for await(const[nm,h] of DH.entries())if(h.kind==='file'&&/\.(cho|chordpro|crd|pro|txt)$/i.test(nm))files[nm]=await(await h.getFile()).text();const had=new Set(Object.keys(files));
+for(const sg of songs)if(sg.file&&files[sg.file]!==undefined){sg.text=files[sg.file];sg._w=sg.text;delete files[sg.file]}let k=0;for(const nm in files)songs.push({id:Date.now()+(k++),file:nm,text:files[nm],_w:files[nm]});
+for(const sg of songs)if(!sg.file||!had.has(sg.file))await fsWrite(sg);if(!songs.some(x=>x.id===cur))cur=songs[0].id;SV('cp_songs',songs);fsMsg('📁 Ordner „'+DH.name+'“ verbunden – '+songs.length+' Songs, Änderungen werden automatisch als .cho gespeichert');lib()}
+async function fsConnect(nw){try{let h=nw?null:await idb(s=>s.get('dir'));if(h&&(await h.requestPermission({mode:'readwrite'}))==='granted')DH=h;else{DH=await showDirectoryPicker({mode:'readwrite'});await idb(s=>s.put(DH,'dir'))}await fsLoad()}catch(e){fsMsg('Ordnerzugriff nicht möglich ('+e.name+'). In eingebetteten Seiten und mobilen Browsern oft gesperrt – bitte .cho-Import/-Export nutzen.')}}
+function dl(n,t){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));a.download=n;a.click()}
+$('#tb').closest('table').insertAdjacentHTML('beforebegin','<div class="flex gap-2 flex-wrap items-center" style="font-size:13px;margin-bottom:8px"><button id="fc" title="Zuletzt verwendeten Bibliotheksordner erneut freigeben (nach jedem Neustart nötig)">↻ Ordner wiederverbinden</button><button id="fn" title="Neuen Bibliotheksordner wählen – alle .cho darin werden eingelesen">📁 Ordner wählen…</button><button id="fr2" title="Dateien im Ordner erneut einlesen">⟳ Neu einlesen</button><button id="f1">💾 Song als .cho</button><button id="fa">⬇ Alle als .cho</button><span id="fss"></span></div>');
+$('#fc').disabled=$('#fn').disabled=$('#fr2').disabled=!FSOK;$('#fr2').onclick=()=>DH?fsLoad():fsMsg('Kein Ordner verbunden');$('#fc').onclick=()=>fsConnect();$('#fn').onclick=()=>fsConnect(true);
+$('#f1').onclick=()=>dl(fname(song()),song().text);$('#fa').onclick=()=>songs.forEach((sg,i)=>setTimeout(()=>dl(fname(sg),sg.text),i*300));
+fsMsg(FSOK?'⚠ Aktuell NUR Browser-Cache – nichts ist als .cho-Datei gespeichert. „Ordner wählen…“ verbindet einen Ordner mit echten .cho-Dateien.':'Speicherort: Browser-Speicher. Dieser Browser kann keinen Ordner verbinden – .cho über Import/Export austauschen.');
+$('#fi').setAttribute('accept','.cho,.chordpro,.crd,.pro,.txt,.json');
+$('#fi').onchange=async e=>{for(const f of e.target.files){const t=await f.text();if(/\.json$/i.test(f.name)){try{const d=JSON.parse(t);(Array.isArray(d)?d:[]).forEach((x,i)=>songs.push({id:Date.now()+i,text:x.text||String(x)}))}catch(x){}}else songs.push({id:Date.now()+Math.floor(Math.random()*1e6),file:f.name,text:t})}e.target.value='';save();lib()};
+const bd0=$('#bd').onclick;$('#bd').onclick=async()=>{const del=songs.filter(x=>sel().includes(x.id)&&x.file);bd0();for(const sg of del)if(!songs.includes(sg)&&DH)try{await DH.removeEntry(sg.file)}catch(e){}};
+(async()=>{if(!FSOK)return;try{const h=await idb(s=>s.get('dir'));if(h&&(await h.queryPermission({mode:'readwrite'}))==='granted'){DH=h;await fsLoad()}else if(h)fsMsg('Ordner „'+h.name+'“ ist gemerkt – „Ordner verbinden“ klicken, um wieder zuzugreifen.')}catch(e){}})();
+$('#sx').after(Object.assign(document.createElement('button'),{id:'sgo',textContent:'▶ Stage',onclick:()=>{if(set.length)cur=set[0];startLive('set')}}));
+// Erweiterung 2: Zahlenfelder, Akkordgröße, Instrumente, Profile, Import, Akkordbibliothek
+L.insA=L.insA||(L.dia===false?[]:[L.ins==='Ukulele'||L.ins==='Klavier'?L.ins:'Gitarre']);if(L.cfs===undefined)L.cfs=L.fs;if(L.sg<5)L.sg=Math.round(L.sg*L.fs);
+const INS=()=>L.insA||[];
+$('#fs').closest('label').insertAdjacentHTML('afterend','<label>Akkord px <input type="number" id="cfs"></label>');
+[['fs',8,60,1,'Text px '],['cfs',8,60,1],['ls',.8,3,.05],['sg',0,80,1,'Abschnitt px '],['dsz',30,300,5],['dgp',0,80,2]].forEach(([id,mn,mx,st,lb])=>{const e=$('#'+id);e.type='number';e.min=mn;e.max=mx;e.step=st;if(lb)e.closest('label').firstChild.nodeValue=lb;e.oninput=()=>{if(e.value===''||isNaN(+e.value))return;L[id]=+e.value;save();draw()}});
+$('#in').closest('div').remove();$('#dg').closest('div').remove();
+const dz=$('#dsz').closest('div');dz.id='dszg';dz.insertAdjacentHTML('beforebegin','<div id="insg"><span>Griffbilder:</span>'+['Gitarre','Ukulele','Klavier'].map(i=>'<label><input type="checkbox" data-i="'+i+'"> '+i+'</label>').join('')+'</div>');
+function syncUI(){['fs','cfs','ls','sg','dsz','dgp','cc','tc','ff','fw'].forEach(k=>{const e=$('#'+k);if(e)e.value=L[k]});$$('#insg input').forEach(c=>c.checked=INS().includes(c.dataset.i));$('#dszg').hidden=!INS().length;$('#cn').textContent=L.cols}
+$$('#insg input').forEach(c=>c.onchange=()=>{L.insA=$$('#insg input:checked').map(x=>x.dataset.i);save();syncUI();draw()});
+const PK=['cols','fs','cfs','ls','cc','tc','land','ff','fw','sg','dsz','dgp','insA'],F0={ff:'Arial,sans-serif',fw:'400',cc:'#c2410c',tc:'#111827',land:false,dsz:100,dgp:14,insA:['Gitarre']};
+PF['Standard A4']=Object.assign({},F0,{cols:1,fs:16,cfs:16,ls:1.3,sg:10});PF['Kompakt']=Object.assign({},F0,{cols:2,fs:11,cfs:11,ls:1.1,sg:6,dsz:70,dgp:8});PF['Große Schrift']=Object.assign({},F0,{cols:1,fs:24,cfs:24,ls:1.4,sg:16});pfs();
+$('#pf').onchange=e=>{const p=PF[e.target.value];if(!p)return;Object.assign(L,JSON.parse(JSON.stringify(p)));syncUI();save();draw()};
+$('#ps').onclick=()=>{const n=$('#pn').value.trim();if(!n)return;const c=ST('cp_prof',{});c[n]={};PK.forEach(k=>c[n][k]=L[k]);SV('cp_prof',c);PF[n]=c[n];pfs();$('#pf').value=n};
+$('#ps').after(Object.assign(document.createElement('button'),{textContent:'🗑',title:'Eigenes Profil löschen',onclick:()=>{const n=$('#pf').value,c=ST('cp_prof',{});if(!c[n])return;delete c[n];delete PF[n];SV('cp_prof',c);pfs()}}));
+function fsBadge(){const b=$('#fsb2');if(!b)return;b.textContent=DH?'📁 '+DH.name:'⚠ nur Browser-Cache';b.style.background=DH?'#166534':'#92400e';b.title=DH?'Änderungen werden als .cho in den Ordner geschrieben':'Songs sind NICHT als Datei gespeichert – Bibliothek öffnen und Ordner wählen';}
+$('#th').before(Object.assign(document.createElement('button'),{id:'fsb2',onclick:()=>mode('lib')}));$('#fsb2').style.cssText='font-size:12px;color:#fff;border:0';fsBadge();
+async function importJSON(d){if(Array.isArray(d)){d.forEach((x,i)=>songs.push({id:Date.now()+i,text:x.text||String(x)}));return d.length+' Songs aus Liste importiert'}
+if(d&&Array.isArray(d.songs)){const ids=new Set(songs.map(x=>x.id));let n=0;d.songs.forEach(x=>{if(!ids.has(x.id)){songs.push(x);n++}});if(d.set)set=d.set;Object.assign(SETS,d.sets||{});SV('cp_sets',SETS);const pr=Object.assign(ST('cp_prof',{}),d.prof||{});SV('cp_prof',pr);Object.assign(PF,pr);pfs();Object.assign(OV,d.ovr||{});SV('cp_ovr',OV);if(d.chords)SV('cp_chords',d.chords);return'Backup eingelesen: '+n+' neue Songs, '+Object.keys(d.sets||{}).length+' Setlists'}
+if(d&&d.format==='chordpro-studio-chords'){Object.assign(OV,d.overrides||{});SV('cp_ovr',OV);if(d.custom)SV('cp_chords',d.custom);return'Akkordbibliothek importiert'}throw new Error('unbekanntes JSON-Format')}
+$('#fi').onchange=async e=>{const m=[];for(const f of e.target.files){try{const t=await f.text();if(/\.json$/i.test(f.name))m.push(await importJSON(JSON.parse(t)));else{songs.push({id:Date.now()+Math.floor(Math.random()*1e6),file:f.name,text:t});m.push(f.name+' importiert')}}catch(x){m.push(f.name+': '+x.message)}}e.target.value='';save();lib();fsMsg(m.join(' · '))};
+$('#br').remove();$('#fr').remove();$('#bj').textContent='⬇ Backup (JSON)';
+$('#bj').onclick=()=>dl('chordpro-backup.json',JSON.stringify({v:2,songs,set,sets:SETS,prof:ST('cp_prof',{}),chords:ST('cp_chords',[]),ovr:OV}));
+$('#chl').insertAdjacentHTML('beforebegin','<div class="flex gap-2 flex-wrap" style="margin-top:8px"><button id="cxe">⬇ Akkordbibliothek exportieren</button><button id="cxi">⬆ Importieren</button><input type="file" id="cxf" accept=".json" hidden></div>');
+$('#cxe').onclick=()=>dl('chordpro-chords.json',JSON.stringify({format:'chordpro-studio-chords',v:1,overrides:OV,custom:ST('cp_chords',[])}));$('#cxi').onclick=()=>$('#cxf').click();
+$('#cxf').onchange=async e=>{try{fsMsg(await importJSON(JSON.parse(await e.target.files[0].text())));draw()}catch(x){fsMsg('Import fehlgeschlagen: '+x.message)}e.target.value=''};
+const chs0=$('#chs').onclick;$('#chs').onclick=()=>{chs0();const n=$('#chn').value.trim()||'Eigener Akkord';if($('#cht').value==='k')OV['Klavier|'+n]=[...pk].sort((a,b)=>a-b);else OV['Gitarre|'+n]=[...g];SV('cp_ovr',OV);draw()};
+syncUI();
+// Erweiterung 3: Dateiname/manuelles Speichern, Einfügen-Palette, Sortierung, Setlist-Builder, Stage-Popup
+Object.assign(AL,{comment_italic:'comment',comment_box:'comment',cb:'comment',highlight:'comment'});
+const AUTO={v:ST('cp_auto',false)};
+function fname(sg){return sg.file||slug(info(sg).title)+'.cho'}
+function fsSync(){if(!DH||!AUTO.v)return;clearTimeout(ft);ft=setTimeout(()=>songs.forEach(sg=>{if(sg.file&&sg._w!==sg.text)fsWrite(sg)}),700)}
+async function fsWrite(sg){if(!DH||!sg.file)return;try{const h=await DH.getFileHandle(sg.file,{create:true}),w=await h.createWritable();await w.write(sg.text);await w.close();sg._w=sg.text;fsMsg('📁 '+DH.name+' – '+sg.file+' gespeichert '+new Date().toLocaleTimeString());fbarUpd()}catch(e){fsMsg('Schreibfehler: '+e.name)}}
+async function fsLoad(){const files={};for await(const[nm,h] of DH.entries())if(h.kind==='file'&&/\.(cho|chordpro|crd|pro|txt)$/i.test(nm))files[nm]=await(await h.getFile()).text();
+for(const sg of songs){if(sg.file&&files[sg.file]!==undefined){sg.text=files[sg.file];sg._w=sg.text;delete files[sg.file]}else delete sg.file}
+let k=0;for(const nm in files)songs.push({id:Date.now()+(k++),file:nm,text:files[nm],_w:files[nm]});
+if(!songs.some(x=>x.id===cur))cur=songs[0].id;SV('cp_songs',songs);const un=songs.filter(x=>!x.file).length;
+fsMsg('📁 „'+DH.name+'“ verbunden – '+songs.filter(x=>x.file).length+' Dateien eingelesen'+(un?', '+un+' Songs noch ohne Datei (im Editor „💾 Speichern“)':'')+'. Auto-Speichern: '+(AUTO.v?'an':'aus'));lib();fbarUpd()}
+$('#split').before(Object.assign(document.createElement('div'),{id:'fbar',innerHTML:'<span>📄</span><input type="text" id="fnm" size="30" placeholder="Dateiname"><button id="fsv" class="pri">💾 Speichern (Strg+S)</button><label><input type="checkbox" id="fau"> Auto-Speichern bei verknüpften Dateien</label><span id="fst"></span>'}));
+$('#fbar').style.cssText='display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:3px 10px;background:var(--pn);border-bottom:1px solid var(--bd);font-size:13px';
+function fbarUpd(){const sg=song(),e=$('#fnm');if(!e)return;if(document.activeElement!==e){e.value=sg.file||'';e.placeholder=slug(info(sg).title)+'.cho'}const d=sg._w!==sg.text,t=$('#fst');t.textContent=!sg.file?'● nicht als Datei gespeichert':d?'● ungespeicherte Änderungen':'✓ gespeichert';t.style.color=sg.file&&!d?'#16a34a':'#d97706'}
+async function saveFile(){const sg=song();let n=($('#fnm').value.trim()||slug(info(sg).title)).replace(/[\\/:*?"<>|]+/g,'').trim();if(!/\.(cho|chordpro|crd|pro)$/i.test(n))n+='.cho';
+if(songs.some(x=>x!==sg&&x.file===n)){fsMsg('Dateiname bereits vergeben: '+n);return}const old=sg.file;
+if(DH){try{const h=await DH.getFileHandle(n,{create:true}),w=await h.createWritable();await w.write(sg.text);await w.close();if(old&&old!==n){try{await DH.removeEntry(old)}catch(e){}}}catch(e){fsMsg('Speichern fehlgeschlagen: '+e.name);return}}else dl(n,sg.text);
+sg.file=n;sg._w=sg.text;save();fbarUpd();fsMsg(DH?'💾 '+n+' in „'+DH.name+'“ gespeichert'+(old&&old!==n?' (umbenannt, alte Datei entfernt)':''):'💾 '+n+' heruntergeladen (kein Ordner verbunden)')}
+$('#fsv').onclick=saveFile;$('#fau').checked=AUTO.v;$('#fau').onchange=e=>{AUTO.v=e.target.checked;SV('cp_auto',AUTO.v)};$('#fnm').onkeydown=e=>{if(e.key==='Enter')saveFile()};
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&!$('#m-editor').hidden&&!$('#live').classList.contains('show')){e.preventDefault();saveFile()}});
+const draw0=draw;draw=function(){draw0();fbarUpd()};
+// Einfügen: alle ChordPro-Direktiven unter "Weitere…"
+const insT=t=>{const ed=$('#ed'),c=t.indexOf('|'),x=t.replace('|',''),a=ed.selectionStart,v=ed.value,pre=a&&v[a-1]!=='\n'?'\n':'';ed.value=v.slice(0,a)+pre+x+v.slice(ed.selectionEnd);const q=a+pre.length+(c<0?x.length:c);ed.focus();ed.setSelectionRange(q,q);ed.dispatchEvent(new Event('input'))};
+const dd=(n,v)=>[n,'{'+n+': |'+(v||'')+'}'],WD={'Metadaten':['title','sorttitle','subtitle','artist','composer','lyricist','arranger','copyright','album','year','key','tempo','duration','capo','tag'].map(n=>dd(n)).concat([dd('time','4/4'),['meta','{meta: Name |Wert}']]),
+'Abschnitte':[['Tab-Block','{start_of_tab}\n|\n{end_of_tab}\n'],['Grid-Block','{start_of_grid}\n|\n{end_of_grid}\n'],['chorus (Refrain wiederholen)','{chorus: |}']],
+'Kommentare':['comment','comment_italic','comment_box','highlight'].map(n=>dd(n)),
+'Layout':[['new_page','{new_page}\n'],['new_physical_page','{new_physical_page}\n'],['column_break','{column_break}\n'],dd('columns','2'),['image','{image: src="|"}'],dd('pagetype','a4')],
+'Akkorde':[['define (Gitarre)','{define: | base-fret 1 frets x 0 2 2 1 0}'],['define (Ukulele)','{define: | base-fret 1 frets 0 0 0 3}'],dd('chord'),dd('transpose'),['diagrams an','{diagrams: on}\n'],['diagrams aus','{diagrams: off}\n']],'Schrift/Farbe':[]};
+['text','chord','tab','title','footer','label'].forEach(p=>[['font','Helvetica'],['size','12'],['colour','blue']].forEach(([q,v])=>WD['Schrift/Farbe'].push(dd(p+q,v))));
+const gs=Object.entries(WD);document.querySelector('.rpn[data-t="Einfügen"]').insertAdjacentHTML('beforeend','<div><select id="mre"><option value="">Weitere…</option>'+gs.map(([g,a],gi)=>'<optgroup label="'+g+'">'+a.map((x,i)=>'<option value="'+gi+'.'+i+'">'+x[0]+'</option>').join('')+'</optgroup>').join('')+'</select></div>');
+$('#mre').onchange=e=>{const[g,i]=e.target.value.split('.');if(!g)return;insT(gs[g][1][i][1]);e.target.value=''};
+// Bibliothek sortieren
+let SK=ST('cp_sort',['title',1]);const srt=(a,b)=>(a.i[SK[0]]||'').localeCompare(b.i[SK[0]]||'','de',{sensitivity:'base'})*SK[1];
+function hdr(){$$('th[data-k]').forEach(t=>{t.textContent={title:'Titel',artist:'Artist',key:'Key',loop:'🔁',tags:'Tags'}[t.dataset.k]+(SK[0]===t.dataset.k?(SK[1]>0?' ▲':' ▼'):'')})}
+$('#tb').closest('table').tHead.onclick=e=>{const t=e.target.closest('th[data-k]');if(!t)return;SK=[t.dataset.k,SK[0]===t.dataset.k?-SK[1]:1];SV('cp_sort',SK);lib()};
+const lib0=lib;lib=function(){lib0();hdr()};hdr();
+// Setlist-Builder: Suche, Sortierung, ＋-Button, ▲▼
+function setUI(){const q=($('#pq').value||'').toLowerCase(),k=$('#psk').value,l=songs.map(x=>({s:x,i:info(x)})).filter(x=>(x.i.title+' '+x.i.artist+' '+x.i.tags).toLowerCase().includes(q)).sort((a,b)=>(a.i[k]||'').localeCompare(b.i[k]||'','de',{sensitivity:'base'}));
+$('#pool').innerHTML=l.map(x=>'<li data-id="'+x.s.id+'"><span><b>'+esc(x.i.title)+'</b><br><small>'+esc(x.i.artist)+'</small></span><button class="add" title="Zur Setlist hinzufügen">＋</button></li>').join('');$$('#pool .add').forEach(b=>b.onclick=()=>{set.push(+b.parentNode.dataset.id);save();rs()});rs()}
+function rs(){set=set.filter(i=>songs.some(x=>x.id===i));$('#sl').innerHTML=set.map((i,n)=>{const f=info(songs.find(x=>x.id===i));return'<li data-id="'+i+'"><span class="hd" title="Ziehen zum Sortieren">⠿</span><span><b>'+(n+1)+'. '+esc(f.title)+'</b><br><small>'+esc(f.artist)+'</small></span><button class="up">▲</button><button class="dn">▼</button><button class="rm">✕</button></li>'}).join('');
+$$('#sl li').forEach((li,n)=>{li.querySelector('.rm').onclick=()=>{set.splice(n,1);save();rs()};li.querySelector('.up').onclick=()=>{if(n){[set[n-1],set[n]]=[set[n],set[n-1]];save();rs()}};li.querySelector('.dn').onclick=()=>{if(n<set.length-1){[set[n+1],set[n]]=[set[n],set[n+1]];save();rs()}}})}
+$('#pool').insertAdjacentHTML('beforebegin','<div class="flex gap-1" style="margin:6px 0"><input type="search" id="pq" placeholder="Lied suchen (Titel/Artist)…" style="flex:1"><select id="psk"><option value="title">nach Titel</option><option value="artist">nach Artist</option></select></div>');
+$('#pq').oninput=$('#psk').onchange=setUI;Sortable.get($('#pool')).option('disabled',true);const sl0=Sortable.get($('#sl'));sl0.option('handle','.hd');sl0.option('onSort',()=>{rd();setTimeout(rs,0)});
+$('#sgo').after(Object.assign(document.createElement('select'),{id:'ssk',innerHTML:'<option value="">Setlist sortieren…</option><option value="title">nach Titel</option><option value="artist">nach Artist</option>',onchange(){const k=this.value;if(!k)return;const g=i=>info(songs.find(x=>x.id===i))[k]||'';set.sort((a,b)=>g(a).localeCompare(g(b),'de',{sensitivity:'base'}));save();rs();this.value=''}}));
+$('#live').addEventListener('click',e=>{if(!e.target.closest('#lset2,#lgr'))$('#lset2').hidden=true});
+fbarUpd();
+// Erweiterung 4: Inhalt-Reiter, einklappbare Format-Gruppen, PDF-Hilfen
+Object.assign(AL,{sot:'st',eot:'et',sog:'sg',eog:'eg'});
+const shCss=()=>'width:'+(L.land?1123:794)+'px;font-size:'+L.fs+'px;--lh:'+L.ls+';--cc:'+L.cc+';color:'+L.tc+';font-family:'+L.ff+';font-weight:'+L.fw+';--cs:'+L.cfs+'px;--hl:'+(L.hl||'#fde047')+';--sg:'+L.sg+'px';
+function hex(c){const v=c.match(/[\d.]+/g)||[0,0,0];return'#'+v.slice(0,3).map(x=>Math.round(+x).toString(16).padStart(2,'0')).join('')}
+function tl(n){const t=n.nodeValue,r=document.createRange(),out=[];let cy=null,cur='',cx=0,ch=[];const push=()=>{if(cur.trim())out.push({t:cur,x:cx,y:cy,ch});cur='';ch=[]};for(let i=0;i<t.length;i++){r.setStart(n,i);r.setEnd(n,i+1);const b=r.getClientRects()[0];if(!b)continue;if(cy===null||Math.abs(b.top-cy)>3){push();cy=b.top;cx=b.left}cur+=t[i];ch.push([t[i],b.left])}push();return out}
+L.mf=Object.assign({artist:true,subtitle:true,composer:false,lyricist:false,arranger:false,album:false,year:false,key:true,time:false,tempo:true,duration:false,capo:true,copyright:false},L.mf||{});if(L.cm===undefined)L.cm=true;PK.push('mf','cm');
+(()=>{const p=document.createElement('div');p.className='rpn';p.dataset.t='Inhalt';p.hidden=true;const N={artist:'Artist',subtitle:'Untertitel',composer:'Komponist',lyricist:'Texter',arranger:'Arrangeur',album:'Album',year:'Jahr',key:'Key',time:'Takt',tempo:'Tempo',duration:'Dauer',capo:'Capo',copyright:'Copyright'};
+p.innerHTML='<div><span>Kopfzeile zeigt:</span>'+Object.keys(N).map(k=>'<label><input type="checkbox" data-mf="'+k+'"> '+N[k]+'</label>').join('')+'</div><div><label><input type="checkbox" id="mcm"> Kommentare / Highlights</label><label>Highlight-Farbe <input type="color" id="mhl"></label></div>';$('#rp').append(p);
+const tb=document.createElement('button');tb.textContent='Inhalt';tb.dataset.t='Inhalt';$('#rt button[data-t="Werkzeuge"]').before(tb);
+p.querySelectorAll('[data-mf]').forEach(c=>{c.checked=!!L.mf[c.dataset.mf];c.onchange=()=>{L.mf[c.dataset.mf]=c.checked;save();draw()}});$('#mcm').checked=L.cm!==false;$('#mcm').onchange=e=>{L.cm=e.target.checked;save();draw()};$('#mhl').value=L.hl||'#fde047';$('#mhl').oninput=e=>{L.hl=e.target.value;save();draw()}})();
+(()=>{const p=document.querySelector('.rpn[data-t=Format]'),lab=i=>$(i).closest('label'),ga=document.createElement('div'),gl=document.createElement('div');ga.className=gl.className='gx';ga.hidden=gl.hidden=true;
+const bA=Object.assign(document.createElement('button'),{title:'Text: Größe, Schrift, Farbe',innerHTML:'<span style="font-size:11px">A</span><span style="font-size:19px;font-weight:700">A</span>'}),bL=Object.assign(document.createElement('button'),{title:'Abstände: Zeile & Abschnitt',textContent:'↕ ≡'});
+['#fs','#cfs','#ff','#fw','#cc','#tc'].forEach(i=>ga.append(lab(i)));['#ls','#sg'].forEach(i=>gl.append(lab(i)));
+const w1=document.createElement('div'),w2=document.createElement('div');w1.append(bA,ga);w2.append(bL,gl);p.replaceChildren(w1,w2);
+bA.onclick=()=>{ga.hidden=!ga.hidden;bA.classList.toggle('on',!ga.hidden)};bL.onclick=()=>{gl.hidden=!gl.hidden;bL.classList.toggle('on',!gl.hidden)}})();
+syncUI();
+// Erweiterung 5: Direktiven-Stile, Loop-Kennzeichen
+function dirStyle(M){const fam=n=>/times|serif/i.test(n)&&!/sans/i.test(n)?"'Times New Roman',serif":/courier|mono/i.test(n)?"'Courier New',monospace":/helvetica|arial|sans/i.test(n)?'Arial,sans-serif':"'"+n.replace(/['"]/g,'')+"',sans-serif",px=v=>(parseFloat(v)*1.333)+'px',o=[],set=(k,fn)=>{if(M[k])o.push(fn(M[k]))};
+set('textcolour',v=>'color:'+v);set('textsize',v=>'font-size:'+px(v));set('textfont',v=>'font-family:'+fam(v));set('chordcolour',v=>'--cc:'+v);set('chordsize',v=>'--cs:'+px(v));set('chordfont',v=>'--cf:'+fam(v));
+set('tabcolour',v=>'--tcol:'+v);set('tabsize',v=>'--ts:'+px(v));set('tabfont',v=>'--tf:'+fam(v));set('titlecolour',v=>'--hcol:'+v);set('titlesize',v=>'--hs:'+px(v));set('titlefont',v=>'--hf:'+fam(v));set('labelcolour',v=>'--lcol:'+v);set('labelsize',v=>'--lsz:'+px(v));set('labelfont',v=>'--lf:'+fam(v));return o.length?';'+o.join(';'):''}
+const INSM=x=>INS().some(i=>({guitar:'Gitarre',ukulele:'Ukulele',piano:'Klavier',keyboard:'Klavier'}[x.toLowerCase()]===i)),isLoop=()=>!!info(songs.find(x=>x.id===cur)||songs[0]).loop;
+$('#fau').closest('label').after(Object.assign(document.createElement('button'),{id:'flp',title:'Song als looper-tauglich kennzeichnen ({tag: loop})',onclick(){const ed=$('#ed'),re=/^\{\s*tag\s*:\s*loop\s*\}\s*\n?/im;ed.value=re.test(ed.value)?ed.value.replace(re,''):/^\{\s*title\s*[:\s]/i.test(ed.value)?ed.value.replace(/^(\{\s*title\s*[:\s][^\n]*\n)/i,'$1{tag: loop}\n'):'{tag: loop}\n'+ed.value;ed.dispatchEvent(new Event('input'))}}));
+const fbu=fbarUpd;fbarUpd=function(){fbu();const b=$('#flp');if(b)b.textContent=info(song()).loop?'🔁 Looper-tauglich: ja':'🔁 Looper-tauglich: nein'};fbarUpd();
+// Erweiterung 6: Mobile Dateihandhabung (Android: Datei-Handles, iOS/Safari: Teilen-Menü)
+const FSF=!!window.showOpenFilePicker,FT=[{description:'ChordPro',accept:{'text/plain':['.cho','.chordpro','.crd','.pro','.txt']}}],HND={},MOB=/Android|iPhone|iPad/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const hsave=()=>idb(s=>s.put(HND,'files')).catch(()=>0);
+idb(s=>s.get('files')).then(m=>{if(m){Object.assign(HND,m);fbarUpd();fsBadge()}}).catch(()=>0);
+async function hwrite(h,t){if((await h.queryPermission({mode:'readwrite'}))!=='granted'&&(await h.requestPermission({mode:'readwrite'}))!=='granted')throw new Error('keine Berechtigung');const w=await h.createWritable();await w.write(t);await w.close()}
+async function shareFiles(l){const fs=l.map(([n,t])=>new File([t],n,{type:'text/plain'}));if(navigator.canShare&&navigator.canShare({files:fs})){await navigator.share({files:fs});return true}l.forEach(([n,t],i)=>setTimeout(()=>dl(n,t),i*300));return false}
+async function saveFile(){const sg=song();let n=($('#fnm').value.trim()||slug(info(sg).title)).replace(/[\\/:*?"<>|]+/g,'').trim();if(!/\.(cho|chordpro|crd|pro)$/i.test(n))n+='.cho';
+if(songs.some(x=>x!==sg&&x.file===n)){fsMsg('Dateiname bereits vergeben: '+n);return}const old=sg.file,h=HND[sg.id];let how='';
+try{if(DH){const fh=await DH.getFileHandle(n,{create:true}),w=await fh.createWritable();await w.write(sg.text);await w.close();if(old&&old!==n){try{await DH.removeEntry(old)}catch(e){}}how='in „'+DH.name+'“ gespeichert'+(old&&old!==n?' (umbenannt, alte Datei entfernt)':'')}
+else if(h&&old===n){await hwrite(h,sg.text);how='in die verknüpfte Datei geschrieben'}
+else if(FSF){const nh=await showSaveFilePicker({suggestedName:n,types:FT});await hwrite(nh,sg.text);HND[sg.id]=nh;n=nh.name;await hsave();how='als „'+n+'“ gespeichert und verknüpft'}
+else{how=(await shareFiles([[n,sg.text]]))?'über das Teilen-Menü gesichert („In Dateien sichern“ wählen)':'heruntergeladen'}}
+catch(e){if(e.name==='AbortError')return;fsMsg('Speichern fehlgeschlagen: '+e.name+' '+(e.message||''));return}
+sg.file=n;sg._w=sg.text;save();fbarUpd();fsBadge();fsMsg('💾 '+n+' '+how)}
+function fsSync(){if(!AUTO.v)return;clearTimeout(ft);ft=setTimeout(async()=>{for(const sg of songs){if(!sg.file||sg._w===sg.text)continue;if(DH)fsWrite(sg);else if(HND[sg.id]){try{const h=HND[sg.id];if((await h.queryPermission({mode:'readwrite'}))==='granted'){await hwrite(h,sg.text);sg._w=sg.text;fbarUpd()}}catch(e){}}}},700)}
+async function linkFiles(){try{const hs=await showOpenFilePicker({multiple:true,types:FT});let n=0;for(const h of hs){const t=await(await h.getFile()).text();let sg=songs.find(x=>x.file===h.name);if(sg)sg.text=t;else{sg={id:Date.now()+(n++)+Math.floor(Math.random()*1e5),text:t};songs.push(sg)}sg.file=h.name;sg._w=t;HND[sg.id]=h}await hsave();save();lib();fsBadge();fbarUpd();fsMsg(hs.length+' Dateien verknüpft – „Speichern“ schreibt direkt in die jeweilige Datei')}catch(e){if(e.name!=='AbortError')fsMsg('Verknüpfen nicht möglich ('+e.name+') – bitte „Import“ nutzen.')}}
+function fsBadge(){const b=$('#fsb2');if(!b)return;const k=Object.keys(HND).length;b.textContent=DH?'📁 '+DH.name:k?'📄 '+k+' verknüpft':'⚠ nur Browser-Cache';b.style.background=DH||k?'#166534':'#92400e'}
+$('#fa').insertAdjacentHTML('afterend','<button id="fl">📂 Dateien verknüpfen</button><button id="fd" title="Liest alle .cho eines Ordners ein (ohne Rückschreiben)">📁 Ordner importieren</button><input type="file" id="fdi" webkitdirectory multiple hidden>');
+const CAN=!!navigator.canShare;$('#fa').textContent=CAN?'📤 Alle teilen / sichern':'⬇ Alle als .cho';$('#f1').textContent=CAN?'📤 Song teilen / sichern':'💾 Song als .cho';
+$('#f1').onclick=async()=>{try{await shareFiles([[fname(song()),song().text]])}catch(e){}};$('#fa').onclick=async()=>{try{await shareFiles(songs.map(sg=>[fname(sg),sg.text]))}catch(e){}};
+$('#fl').hidden=!FSF;$('#fl').onclick=linkFiles;$('#fd').onclick=()=>$('#fdi').click();
+$('#fdi').onchange=async e=>{let n=0;for(const f of e.target.files){if(!/\.(cho|chordpro|crd|pro|txt)$/i.test(f.name))continue;const t=await f.text(),ex=songs.find(x=>x.file===f.name);if(ex)ex.text=t;else songs.push({id:Date.now()+(n++)+Math.floor(Math.random()*1e5),file:f.name,text:t,_w:t})}e.target.value='';save();lib();fsMsg('Ordner eingelesen – Änderungen bitte über „Speichern“ zurückschreiben')};
+if(MOB){$('#fi').removeAttribute('accept')}
+if(!FSOK)fsMsg(FSF?'Android: „Dateien verknüpfen“ wählt einzelne .cho-Dateien, „Speichern“ schreibt direkt hinein. Eine Ordnerauswahl bietet dieser Browser nicht.':'iOS/Safari: Import über die Dateien-App, „Speichern“ öffnet das Teilen-Menü → „In Dateien sichern“ (Ordner frei wählbar). Direkter Ordnerzugriff ist hier technisch nicht möglich.');
+fsBadge();
+// Live (Stage): ein durchgehender Lauftext in einer Spalte, Einstellungen unabhängig vom PDF-Layout
+const SG=Object.assign({fs:34,cc:'#facc15',tc:'#ffffff',bg:'#000000',fw:'400',ff:'Arial,sans-serif',ls:1.5,sg:24,sp:30,cfs:34,hint:true,hc:'#111111',hb:'#f59e0b'},ST('cp_stage',{})),STG_T={c:'#e5e7eb',d:'#facc15',p:'#facc15',k:'#374151',kb:'#111827'},sgs=()=>SV('cp_stage',SG);
+if(SG.sg<5)SG.sg=Math.round(SG.sg*SG.fs);let li=0,play=false,pos=0,last=0,acc=0;const lc=()=>$('#lsc');
+const lst=()=>{const v=$('#lsrc').value,ok=a=>a.filter(i=>songs.some(s=>s.id===i));let a;if(v==='all')a=songs.map(s=>s.id);else if(v==='one')a=[cur];else if(v.startsWith('sl:'))a=ok(SETS[v.slice(3)]||[]);else a=ok(set);return a.length?a:songs.map(s=>s.id)};
+function srcOpts(v){$('#lsrc').innerHTML='<option value="set">Aktuelle Setlist</option><option value="all">Alle Songs</option><option value="one">Nur dieser Song</option>'+Object.keys(SETS).map(k=>'<option value="sl:'+esc(k)+'">Setlist: '+esc(k)+'</option>').join('');$('#lsrc').value=v}
+function startLive(src){srcOpts(src||$('#lsrc').value||(set.length?'set':'all'));li=Math.max(0,lst().indexOf(cur));$('#live').classList.add('show');try{const r=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();r&&r.catch&&r.catch(()=>0)}catch(e){}lv();lc().scrollTop=0}
+function lv(keep){const c=lc(),id=lst()[li],s=songs.find(x=>x.id===id)||songs[0],rel=keep&&c.scrollHeight?c.scrollTop/c.scrollHeight:0,v=$('#lvw').value;cur=s.id;const B=build(s.text,{shift,capo,nota,cols:1,dins:v==='g'?(INS().length?INS():['Gitarre']):[],th:STG_T});
+c.className=(v==='t'?'nochord ':'')+(SG.hint?'':'nohint');c.style.cssText='font-size:'+SG.fs+'px;font-family:'+SG.ff+';font-weight:'+SG.fw+';--lh:'+SG.ls+';--cc:'+SG.cc+';--cs:'+SG.cfs+'px;--hc:'+SG.hc+';--hb:'+SG.hb+';--sg:'+SG.sg+'px;color:'+SG.tc+';background:'+SG.bg;
+c.innerHTML='<div class="lw">'+B.head+B.G.filter(g=>!g.brk).map(g=>B.grp(g,g.l)).join('')+'<div class="lend">— Ende —</div></div>';c.scrollTop=rel*c.scrollHeight;pos=c.scrollTop;$('#lt').textContent=(li+1)+'/'+lst().length+' · '+info(s).title+(info(s).loop?' 🔁':'');$('#lsh').textContent=shift;spl();pgi()}
+function pgi(){const c=lc(),H=c.clientHeight||1,t=Math.max(1,Math.ceil(c.scrollHeight/H));$('#lpg').textContent='Seite '+Math.min(t,Math.round(c.scrollTop/H)+1)+'/'+t}
+function setPlay(v){play=v;last=0;acc=0;pos=lc().scrollTop;$('#lpl').textContent=play?'⏸':'▶'}
+const tg=()=>setPlay(!play);
+function go(d){li=(li+d+lst().length)%lst().length;shift=0;setPlay(false);lv();lc().scrollTop=0;pos=0;pgi()}
+function pgGo(d){const c=lc(),t=Math.max(0,Math.min(c.scrollTop+d*c.clientHeight*.85,c.scrollHeight-c.clientHeight));c.scrollTo({top:t,behavior:'smooth'});pos=t}
+function spl(){$('#spv').textContent=$('#lm').value==='s'?SG.sp+' px/s':(180/SG.sp).toFixed(1)+' s/Seite'}
+function tick(t){if(play){const c=lc();if($('#lm').value==='s'){if(last){pos+=SG.sp*(t-last)/1000;c.scrollTop=pos}last=t;if(pos>=c.scrollHeight-c.clientHeight)setPlay(false)}else{acc+=last?t-last:0;last=t;if(acc>180000/SG.sp){acc=0;if(c.scrollTop+c.clientHeight>=c.scrollHeight-4)setPlay(false);else pgGo(1)}}}requestAnimationFrame(tick)}requestAnimationFrame(tick);
+$('#lp').onclick=()=>go(-1);$('#ln').onclick=()=>go(1);$('#lpl').onclick=tg;$('#lb1').onclick=()=>pgGo(-1);$('#lb2').onclick=()=>pgGo(1);
+$('#lk').onclick=()=>{shift--;lv(true)};$('#lj').onclick=()=>{shift++;lv(true)};
+
+$('#lsm').onclick=()=>{SG.sp=Math.max(5,SG.sp-5);sgs();spl()};$('#lsp').onclick=()=>{SG.sp=Math.min(300,SG.sp+5);sgs();spl()};
+$('#lgr').onclick=()=>{$('#lset2').hidden=!$('#lset2').hidden};
+[['sgc','cc'],['sgt','tc'],['sgb','bg'],['sgf','ff'],['sgw','fw'],['sgl','ls'],['sgs','sg'],['sgfs','fs'],['sgcs','cfs'],['sghc','hc'],['sghb','hb']].forEach(([id,k])=>{const e=$('#'+id);e.value=SG[k];e.oninput=()=>{if(e.type==='number'){if(e.value===''||isNaN(+e.value))return;SG[k]=+e.value}else SG[k]=e.value;sgs();lv(true)}});$('#sgh').checked=SG.hint;$('#sgh').onchange=e=>{SG.hint=e.target.checked;sgs();lv(true)};
+$('#lvw').onchange=()=>lv(true);$('#lm').onchange=()=>{setPlay(false);spl()};$('#lsrc').onchange=()=>{li=Math.max(0,lst().indexOf(cur));setPlay(false);lv();lc().scrollTop=0};
+$$('#lset select').forEach(x=>x.addEventListener('change',()=>x.blur()));$('#live').addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur()});
+lc().onscroll=pgi;['wheel','touchstart'].forEach(ev=>lc().addEventListener(ev,()=>{pos=lc().scrollTop},{passive:true}));
+lc().onclick=e=>{if($('#lm').value!=='p')return;const r=lc().getBoundingClientRect();pgGo(e.clientX-r.left>r.width/3?1:-1)};
+$('#lx').onclick=()=>{setPlay(false);$('#live').classList.remove('show');document.fullscreenElement&&document.exitFullscreen();mode('editor')};
+addEventListener('keydown',e=>{if(!$('#live').classList.contains('show')||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=e.code;
+if(k==='Space'){e.preventDefault();tg()}else if(k==='PageDown'){e.preventDefault();go(1)}else if(k==='PageUp'){e.preventDefault();go(-1)}else if(k==='ArrowDown'||k==='ArrowRight'){e.preventDefault();pgGo(1)}else if(k==='ArrowUp'||k==='ArrowLeft'){e.preventDefault();pgGo(-1)}});
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if($('#live').classList.contains('show'))lv(true)},250)});
+// Modale
+const mdl=id=>{$('#md').classList.add('show');$$('.box').forEach(b=>b.classList.toggle('show',b.id===id))};$$('.xc').forEach(b=>b.onclick=()=>$('#md').classList.remove('show'));
+$('#b-ug').onclick=()=>mdl('x-ug');
+const CS=/^[A-G][#b]?(?:maj|min|dim|aug|sus|add|m|M|\d+|[#b+\-°ø()]|\/[A-G][#b]?)*$/,SEC=/^(intro|verse|chorus|pre-?chorus|bridge|outro|solo|instrumental|interlude|refrain|hook|tag|coda|breakdown|strophe|ending)\b/i;
+function ugConv(txt){txt=txt.replace(/\[\/?tab\]/g,'').replace(/\[ch\]([^\[]*)\[\/ch\]/g,'$1').replace(/\t/g,'    ');const ln=txt.split(/\r?\n/),tok=l=>l.trim().split(/\s+/),isC=l=>{const t=tok(l);return l.trim()&&t.every(x=>CS.test(x)||/^(\||\/|x\d+|\d+x|N\.?C\.?)$/i.test(x))&&t.some(x=>CS.test(x))},hd=l=>{const m=/^\s*\[([^\]]+)\]\s*$/.exec(l)||/^\s*([A-Za-z\- ]+\d*)\s*:?\s*$/.exec(l);return m&&SEC.test(m[1].trim())?m[1].trim():null},isT=l=>/^\s*[eEBGDA]\|[-0-9hpbrx\/\\~()|.\s^]*$/.test(l);
+const blocks=[],meta=[];let cur=null;const nb=(t,lab)=>{cur={t,lab,l:[]};blocks.push(cur)};
+for(let i=0;i<ln.length;i++){const l=ln[i],h=hd(l),mm=!blocks.length&&/^\s*(capo|key|tuning|tempo|bpm)\s*[:\-]?\s*(.+)$/i.exec(l);
+if(mm){const k=mm[1].toLowerCase(),v=mm[2].trim();if(k==='capo'){const n=/\d+/.exec(v);meta.push('{capo: '+(n?n[0]:v)+'}')}else if(k==='key')meta.push('{key: '+v+'}');else if(k==='tempo'||k==='bpm')meta.push('{tempo: '+v.replace(/\D+/g,'')+'}');else meta.push('{comment: Tuning: '+v+'}');continue}
+if(h){nb(/^(chorus|refrain|hook)/i.test(h)?'chorus':/^bridge/i.test(h)?'bridge':'verse',h);continue}
+if(isT(l)){if(!cur||cur.t!=='tab')nb('tab');cur.l.push(l.replace(/\s+$/,''));continue}
+if(!l.trim()){if(cur&&cur.t==='raw')cur.l.push('');continue}
+if(!cur||cur.t==='tab')nb('raw');
+if(isC(l)){const nx=ln[i+1];if(nx!==undefined&&nx.trim()&&!isC(nx)&&!hd(nx)&&!isT(nx)){let r=nx,off=0;for(const m of [...l.matchAll(/\S+/g)]){if(!CS.test(m[0]))continue;const p=Math.min(m.index+off,r.length);r=r.slice(0,p)+'['+m[0]+']'+r.slice(p);off+=m[0].length+2}cur.l.push(r);i++}else cur.l.push(tok(l).map(x=>CS.test(x)?'['+x+']':x).join(' '))}else cur.l.push(l)}
+const out=[...meta];if(meta.length)out.push('');
+blocks.forEach(b=>{const q=b.l.slice();while(q.length&&!q[0].trim())q.shift();while(q.length&&!q[q.length-1].trim())q.pop();if(!q.length)return;if(b.t==='raw')out.push(...q);else if(b.t==='tab')out.push('{start_of_tab}',...q,'{end_of_tab}');else out.push('{start_of_'+b.t+': '+b.lab+'}',...q,'{end_of_'+b.t+'}');out.push('')});
+while(out.length&&!out[out.length-1].trim())out.pop();return out.join('\n')}
+$('#ugc').onclick=()=>{const t='{title: Importierter Song}\n\n'+ugConv($('#ugi').value);songs.push({id:Date.now(),text:t});cur=songs[songs.length-1].id;save();$('#md').classList.remove('show');mode('editor')};
+let g=[-1,-1,-1,-1,-1,-1],pk=new Set();const NM=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function cv(){if($('#cht').value==='k'){$('#cv').innerHTML='<div class="flex gap-1 flex-wrap">'+NM.map((n,i)=>'<button data-k="'+i+'" class="'+(pk.has(i)?'on':'')+'" style="width:'+(n.includes('#')?'34':'40')+'px;'+(n.includes('#')?'background:#222;color:#fff':'')+'">'+n+'</button>').join('')+'</div>';$$('#cv [data-k]').forEach(b=>b.onclick=()=>{const i=+b.dataset.k;pk.has(i)?pk.delete(i):pk.add(i);cv()});return}
+let s='<svg viewBox="0 0 180 200" width="240" style="background:#fff;border-radius:8px">';for(let i=0;i<6;i++)s+='<line x1="'+(30+i*24)+'" y1="40" x2="'+(30+i*24)+'" y2="190" stroke="#333"/>';for(let f=0;f<=5;f++)s+='<line x1="30" y1="'+(40+f*30)+'" x2="150" y2="'+(40+f*30)+'" stroke="#333" stroke-width="'+(f?1:4)+'"/>';
+g.forEach((v,i)=>{const x=30+i*24;if(v<0)s+='<text x="'+x+'" y="30" text-anchor="middle" fill="#333">×</text>';else if(v===0)s+='<circle cx="'+x+'" cy="24" r="6" fill="none" stroke="#333"/>';else s+='<circle cx="'+x+'" cy="'+(25+v*30)+'" r="9" fill="#c2410c"/>';for(let f=0;f<=5;f++)s+='<rect data-s="'+i+'" data-f="'+f+'" x="'+(x-12)+'" y="'+(f?25+f*30:10)+'" width="24" height="'+(f?30:28)+'" fill="transparent" style="cursor:pointer"/>'});
+$('#cv').innerHTML=s+'</svg>';$$('#cv rect').forEach(r=>r.onclick=()=>{const i=+r.dataset.s,f=+r.dataset.f;g[i]=g[i]===f?-1:f;cv()})}
+$('#cht').onchange=cv;$('#b-ch').onclick=()=>{cv();chl();mdl('x-ch')};
+function chl(){$('#chl').innerHTML=ST('cp_chords',[]).map(c=>esc(c.n+': '+c.d)).join('<br>')}
+$('#chs').onclick=()=>{const n=$('#chn').value.trim()||'Eigener Akkord',a=ST('cp_chords',[]),k=$('#cht').value==='k',d=k?'keys '+[...pk].sort((x,y)=>x-y).map(i=>NM[i]).join(' '):'frets '+g.map(v=>v<0?'x':v).join(' ');a.push({n,d});SV('cp_chords',a);if(!k){song().text='{define: '+n+' base-fret 1 '+d+'}\n'+song().text;$('#ed').value=song().text;save();draw()}chl()};
+// MIDI
+let learn=null,mp=ST('cp_midi',{}),acts={next:'Nächster Song',prev:'Vorheriger Song',scroll:'AutoScroll'};
+function mui(){$('#mal').innerHTML=Object.keys(acts).map(a=>'<div class="flex gap-2 items-center my-2"><span style="flex:1">'+acts[a]+': <code>'+(mp[a]||'–')+'</code></span><button data-a="'+a+'">'+(learn===a?'Warte auf Pedal…':'Anlernen')+'</button></div>').join('');$$('#mal button').forEach(b=>b.onclick=()=>{learn=b.dataset.a;mui()})}
+$('#b-mi').onclick=async()=>{mdl('x-mi');mui();if(!navigator.requestMIDIAccess){$('#mst').textContent='Web MIDI wird von diesem Browser nicht unterstützt (z. B. iOS Safari). Tastatur-Pedale (Bild-Auf/Ab) funktionieren weiterhin.';return}
+try{const a=await navigator.requestMIDIAccess();const hook=()=>{a.inputs.forEach(i=>i.onmidimessage=mm);$('#mst').textContent='Geräte: '+([...a.inputs.values()].map(i=>i.name).join(', ')||'keine gefunden')};hook();a.onstatechange=hook}catch(e){$('#mst').textContent='MIDI-Zugriff verweigert.'}};
+function mm(e){const[s,d1,d2]=e.data,t=s&0xf0;if(!(t===0x90||t===0xb0)||!d2)return;const k=t.toString(16)+'-'+d1;if(learn){mp[learn]=k;SV('cp_midi',mp);learn=null;mui();return}
+const a=Object.keys(mp).find(x=>mp[x]===k);if(a==='next')go(1);if(a==='prev')go(-1);if(a==='scroll'&&$('#live').classList.contains('show'))tg()}
+mode('editor');
+</script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>0))</script></body></html>
