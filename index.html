@@ -66,12 +66,14 @@ header>b{display:none}header{padding:3px 8px}main{padding-bottom:64px}
 #nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:0;padding:4px 2px;font-size:11px;border-radius:12px;min-height:46px}#nav .ic{font-size:21px;margin:0}
 #fbar{flex-wrap:nowrap!important;overflow-x:auto}#fbar>*{flex:none}#fbar label,#fmg{display:none}#fnm{width:130px}
 #m-set{flex-direction:column!important;overflow:auto}
-.tbl thead{display:none}.tbl,.tbl tbody{display:block}.tbl tr{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;padding:8px 4px;border-bottom:1px solid var(--bd)}.tbl td{border:0!important;padding:0!important}.tbl td:nth-child(1){order:1}.tbl td:nth-child(2){flex:1 1 55%;order:2;font-weight:600}.tbl td:nth-child(7){order:3}.tbl td:nth-child(3),.tbl td:nth-child(4),.tbl td:nth-child(5),.tbl td:nth-child(6){order:4;font-size:12px;opacity:.75}#lchips{display:flex}
+.tbl thead{display:none}.tbl,.tbl tbody{display:block}.tbl tr{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;padding:8px 4px;border-bottom:1px solid var(--bd)}.tbl td{border:0!important;padding:0!important}.tbl td:nth-child(1){order:1}.tbl td:nth-child(2){flex:1 1 calc(100% - 40px);order:2}.tbl td:nth-child(3){flex:1 0 100%;order:3;padding-left:34px!important;opacity:.85}.tbl td:nth-child(4),.tbl td:nth-child(5),.tbl td:nth-child(6){order:4;font-size:12px;opacity:.75}.tbl td:nth-child(7){flex:1 0 100%;order:5;padding-left:34px!important;font-size:11px;opacity:.6}#lchips{display:flex}
 .box{width:100%!important;max-height:94%}#md{padding:6px}
 #lbar{padding:4px 6px;gap:4px}#lbar button{min-height:40px;padding:2px 10px}.lbt{display:none}#lcc{gap:6px}#lcc button{min-width:44px;font-size:18px}#lcc #lpl{min-width:60px}#lpg{display:none}
 #lset:not(.lopen)>div:first-child>label{display:none}#lset>div{padding:4px 8px;gap:8px}#lset>#lset2{position:static;width:auto;border:0;border-radius:0;box-shadow:none;border-top:1px solid #333;background:transparent}#lcc{gap:4px}#lset>div:first-child>button{padding:2px 8px;min-height:34px;font-size:12px}#lt{min-width:80px!important}#lb1,#lb2{display:none}#lcc button{min-width:40px}#lcc #lpl{min-width:56px}#lt{font-size:13px}#lset.lopen{max-height:58vh;overflow:auto}#lset2{grid-template-columns:1fr 1fr!important}#lset2 label{font-size:12px}}
 #rt button{white-space:nowrap}
 #lsc .ldia{margin:0 0 .8em}#lsc .ldia.pin{position:sticky;top:0;z-index:6;background:var(--lbg,#000);padding:6px 0;border-bottom:1px solid #333}
+@media(min-width:761px){.tbl{table-layout:fixed}.tbl th:nth-child(1),.tbl td:nth-child(1){width:38px}.tbl th:nth-child(2){width:27%}.tbl th:nth-child(3){width:22%}.tbl th:nth-child(4){width:64px}.tbl th:nth-child(5){width:56px}.tbl th:nth-child(6){width:12%}.tbl td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tbl tbody tr:nth-child(even) td{background:rgba(128,128,128,.07)}}
+.tbl td.ct{font-weight:600}.tbl td.cf{font-size:12px;opacity:.65}#ftg{align-self:flex-start;margin:4px 0}#sybtn{border:0;font-size:12px}#sybtn.on{background:#166534;color:#fff}#x-sy details{margin:10px 0}#x-sy textarea{height:90px;margin:6px 0;font-size:11px}#sycode{font-size:30px;letter-spacing:5px;font-weight:700}
 </style></head><body>
 <header><b>🎸 ChordPro Studio</b><nav class="flex gap-1 flex-wrap" id="nav"><button data-m="editor">✏️ Editor</button><button data-m="lib">📚 Bibliothek</button><button data-m="set">📋 Setlist</button><button data-m="live">🎤 Live Stage</button></nav><span style="flex:1"></span><button id="th" title="Dark/Light">🌓</button></header>
 <main>
@@ -87,7 +89,7 @@ header>b{display:none}header{padding:3px 8px}main{padding-bottom:64px}
 <button id="b-ug">UG-Konverter</button><button id="b-ch">Akkord-Editor</button><button id="b-mi">MIDI</button><button id="b-pdf" class="pri">PDF</button></div>
 <div id="split"><textarea id="ed" spellcheck="false"></textarea><div id="dv" title="Ziehen zum Anpassen"></div><div id="pv"><div id="wrap"><div id="sheet"></div></div></div></div></section>
 <section id="m-lib" class="mode" hidden style="padding:10px;overflow:auto"><div class="flex gap-2 flex-wrap mb-2"><input type="search" id="q" placeholder="Suchen…"><button id="nw">＋ Neu</button><button onclick="document.getElementById('fi').click()">⬆ Import (.cho / .json / Backup)</button><input type="file" id="fi" multiple accept=".chordpro,.cho,.txt,.json" hidden><button id="bs">→ Setlist</button><button id="bp" class="pri">PDF (Auswahl)</button><button id="bd">🗑 Löschen</button><button id="bj">JSON-Export</button></div>
-<table class="tbl"><thead><tr><th><input type="checkbox" id="ca"></th><th data-k="title">Titel</th><th data-k="artist">Artist</th><th data-k="key">Key</th><th data-k="loop">🔁</th><th data-k="tags">Tags</th><th></th></tr></thead><tbody id="tb"></tbody></table></section>
+<table class="tbl"><thead><tr><th><input type="checkbox" id="ca"></th><th data-k="title">Titel</th><th data-k="artist">Artist</th><th data-k="key">Key</th><th data-k="loop">🔁</th><th data-k="tags">Tags</th><th>Datei</th></tr></thead><tbody id="tb"></tbody></table></section>
 <section id="m-set" class="mode" hidden style="padding:10px;flex-direction:row;gap:10px"><div class="pnl"><b>Songpool</b><ul id="pool"></ul></div><div class="pnl"><b>Setlist (hierher ziehen, Klick auf ✕ entfernt)</b><ul id="sl"></ul></div></section>
 </main>
 <div id="live"><div id="lbar"><button id="lp">⏮ Vorheriger Song (Bild↑)</button><div id="lcc"><button id="lb1" title="Eine ganze Seite zurück">⏪</button><button id="lup" title="Ein Drittel Seite nach oben">▲</button><button id="ltm" title="Langsamer (Taste −)">−</button><button id="lpl" title="AutoScroll Start/Pause (Leertaste)">▶</button><button id="ltp" title="Schneller (Taste +)">+</button><button id="ldw" title="Ein Drittel Seite nach unten">▼</button><button id="lb2" title="Eine ganze Seite vor">⏩</button><span id="lpg"></span></div><button id="ln">Nächster Song (Bild↓) ⏭</button></div>
@@ -242,7 +244,7 @@ $('#bj').insertAdjacentHTML('afterend','<button id="br">⬆ Restore</button><inp
 $('#br').onclick=()=>$('#fr').click();
 $('#fr').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(Array.isArray(d)||!d.songs)return;const ids=new Set(songs.map(s=>s.id));d.songs.forEach(s=>{if(!ids.has(s.id))songs.push(s)});set=d.set||set;Object.assign(SETS,d.sets||{});SV('cp_sets',SETS);SV('cp_prof',Object.assign(ST('cp_prof',{}),d.prof||{}));SV('cp_chords',d.chords||ST('cp_chords',[]));save();location.reload()}catch(x){}};
 // Bibliothek
-function lib(){const q=$('#q').value.toLowerCase();$('#tb').innerHTML=songs.map(s=>({s,i:info(s)})).filter(x=>(x.i.title+x.i.artist+x.i.tags).toLowerCase().includes(q)).sort(srt).map(x=>'<tr data-id="'+x.s.id+'"><td><input type="checkbox" class="sel" value="'+x.s.id+'"></td><td>'+esc(x.i.title)+' <small style="opacity:.6">'+(x.s.file?'📄 '+esc(x.s.file):'💾 nur im Browser')+'</small>'+'</td><td>'+esc(x.i.artist)+'</td><td>'+esc(x.i.key)+'</td><td>'+x.i.loop+'</td><td>'+esc(x.i.tags)+'</td><td style="white-space:nowrap"><button data-sh="'+x.s.id+'" title="Als .cho teilen / herunterladen">📤</button> <button data-rm="'+x.s.id+'" title="Löschen">🗑</button></td></tr>').join('');
+function lib(){const q=$('#q').value.toLowerCase();$('#tb').innerHTML=songs.map(s=>({s,i:info(s)})).filter(x=>(x.i.title+x.i.artist+x.i.tags).toLowerCase().includes(q)).sort(srt).map(x=>'<tr data-id="'+x.s.id+'"><td><input type="checkbox" class="sel" value="'+x.s.id+'"></td><td class="ct">'+esc(x.i.title)+'</td><td>'+esc(x.i.artist)+'</td><td>'+esc(x.i.key)+'</td><td>'+x.i.loop+'</td><td>'+esc(x.i.tags)+'</td><td class="cf">'+(x.s.file?'📄 '+esc(x.s.file):'💾 nur im Browser')+'</td></tr>').join('');
 $$('#tb tr').forEach(r=>r.onclick=e=>{if(e.target.type==='checkbox')return;cur=+r.dataset.id;shift=0;capo=0;$('#cp').value=0;mode('editor')})}
 const sel=()=>$$('.sel:checked').map(c=>+c.value);$('#q').oninput=lib;$('#ca').onchange=e=>$$('.sel').forEach(c=>c.checked=e.target.checked);
 $('#nw').onclick=()=>{const id=Date.now();songs.push({id,text:'{title: Neuer Song}\n{artist: }\n{key: C}\n\n[C]Text [G]hier'});cur=id;save();mode('editor')};
@@ -476,7 +478,7 @@ if(SG.sg<5)SG.sg=Math.round(SG.sg*SG.fs);let li=0,play=false,pos=0,last=0,acc=0;
 const lst=()=>{const v=$('#lsrc').value,ok=a=>a.filter(i=>songs.some(s=>s.id===i));let a;if(v==='all')a=songs.map(s=>s.id);else if(v==='one')a=[cur];else if(v.startsWith('sl:'))a=ok(SETS[v.slice(3)]||[]);else a=ok(set);return a.length?a:songs.map(s=>s.id)};
 function srcOpts(v){$('#lsrc').innerHTML='<option value="set">Aktuelle Setlist</option><option value="all">Alle Songs</option><option value="one">Nur dieser Song</option>'+Object.keys(SETS).map(k=>'<option value="sl:'+esc(k)+'">Setlist: '+esc(k)+'</option>').join('');$('#lsrc').value=v}
 function startLive(src){srcOpts(src||$('#lsrc').value||(set.length?'set':'all'));li=Math.max(0,lst().indexOf(cur));$('#live').classList.add('show');try{const r=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();r&&r.catch&&r.catch(()=>0)}catch(e){}lv();lc().scrollTop=0}
-function lv(keep){const c=lc(),id=lst()[li],s=songs.find(x=>x.id===id)||songs[0],rel=keep&&c.scrollHeight?c.scrollTop/c.scrollHeight:0,v=$('#lvw').value;cur=s.id;const B=build(s.text,{shift,capo,nota,cols:1,dins:v==='g'?(SG.ins&&SG.ins.length?SG.ins:['Gitarre']):[],th:Object.assign({},STG_T,{sz:SG.dsz,gp:SG.dgp}),diaSep:true});
+function lv(keep){const c=lc(),id=lst()[li],s=(window.RM&&RM.role==='display'&&RM.song)||songs.find(x=>x.id===id)||songs[0],rel=keep&&c.scrollHeight?c.scrollTop/c.scrollHeight:0,v=$('#lvw').value;if(!(window.RM&&RM.role==='display'&&RM.song))cur=s.id;const B=build(s.text,{shift,capo,nota,cols:1,dins:v==='g'?(SG.ins&&SG.ins.length?SG.ins:['Gitarre']):[],th:Object.assign({},STG_T,{sz:SG.dsz,gp:SG.dgp}),diaSep:true});
 c.className=(v==='t'?'nochord ':'')+(SG.hint?'':'nohint');c.style.cssText='font-size:'+SG.fs+'px;font-family:'+SG.ff+';font-weight:'+SG.fw+';--lh:'+SG.ls+';--cc:'+SG.cc+';--cs:'+SG.cfs+'px;--hc:'+SG.hc+';--hb:'+SG.hb+';--sg:'+SG.sg+'px;color:'+SG.tc+';background:'+SG.bg;
 c.innerHTML='<div class="lw">'+B.head+(B.dh?'<div class="ldia'+(SG.pos==='pin'?' pin':'')+'" style="--lbg:'+SG.bg+';font-size:'+Math.max(10,Math.round(SG.fs*SG.dsz/100*.6))+'px">'+B.dh+'</div>':'')+B.G.filter(g=>!g.brk).map(g=>B.grp(g,g.l)).join('')+'<div class="lend">— Ende —</div></div>';c.scrollTop=rel*c.scrollHeight;pos=c.scrollTop;$('#lt').textContent=(li+1)+'/'+lst().length+' · '+info(s).title+(info(s).loop?' 🔁':'');$('#lsh').textContent=shift;spl();pgi()}
 function pgi(){const c=lc(),H=c.clientHeight||1,t=Math.max(1,Math.ceil(c.scrollHeight/H));$('#lpg').textContent='Seite '+Math.min(t,Math.round(c.scrollTop/H)+1)+'/'+t}
@@ -579,6 +581,61 @@ SG.ins=SG.ins||[];if(SG.dsz===undefined)SG.dsz=100;if(SG.dgp===undefined)SG.dgp=
 $$('#sgdia [data-si]').forEach(c=>{c.checked=SG.ins.includes(c.dataset.si);c.onchange=()=>{SG.ins=$$('#sgdia [data-si]:checked').map(x=>x.dataset.si);if(SG.ins.length)$('#lvw').value='g';else if($('#lvw').value==='g')$('#lvw').value='c';sgs();lv(true)}});
 [['sgd','dsz'],['sgg','dgp']].forEach(([id,k])=>{const e=$('#'+id);e.value=SG[k];e.oninput=()=>{if(e.value===''||isNaN(+e.value))return;SG[k]=+e.value;sgs();lv(true)}});
 $('#sgp').value=SG.pos;$('#sgp').onchange=e=>{SG.pos=e.target.value;sgs();lv(true)};
+// Erweiterung 10: Fernsteuerung (Steuerung ↔ Anzeige), online per Raum-Code, offline per manuellem Koppeln
+window.RM={pick:null,role:null,link:null,song:null,txt:'',sig:'',peer:null,pc:null,code:'',msg:'',off:''};
+const rmSend=m=>{try{RM.link&&RM.link.send(JSON.stringify(m))}catch(e){}};
+const lns=()=>[...lc().querySelectorAll('.ln,.lab,.gr')].filter(e=>e.offsetParent!==null);
+function anchor(){const c=lc(),ct=c.getBoundingClientRect().top,es=lns();for(let i=0;i<es.length;i++){const r=es[i].getBoundingClientRect();if(r.bottom>ct+1)return{i,f:Math.max(0,(ct-r.top)/Math.max(1,r.height))}}return{i:0,f:0}}
+function gotoAnchor(a){const c=lc(),es=lns(),e=es[Math.min(a.i,es.length-1)];if(!e)return;const r=e.getBoundingClientRect(),ct=c.getBoundingClientRect().top;c.scrollTop=c.scrollTop+(r.top-ct)+a.f*r.height}
+function rmSendScroll(){if(RM.link&&RM.role==='ctrl'&&$('#live').classList.contains('show'))rmSend(Object.assign({t:'scroll'},anchor()))}
+function rmSendSong(force){if(!RM.link||RM.role!=='ctrl')return;const sg=songs.find(x=>x.id===cur)||songs[0],v=$('#lvw').value,sig=JSON.stringify([sg.id,shift,capo,nota,v]);if(!force&&sig===RM.sig&&RM.txt===sg.text)return;RM.sig=sig;RM.txt=sg.text;rmSend({t:'song',text:sg.text,shift,capo,nota,view:v});setTimeout(rmSendScroll,150)}
+function rmRecv(raw){let m;try{m=JSON.parse(raw)}catch(e){return}
+if(m.t==='hello'&&RM.role==='ctrl'){rmSendSong(true);return}
+if(RM.role!=='display')return;
+if(m.t==='song'){RM.song={id:-1,text:m.text};shift=m.shift;capo=m.capo;nota=m.nota;if(m.view)$('#lvw').value=m.view;if(!$('#live').classList.contains('show')){startLive();$('#live').classList.add('focus')}else lv();lc().scrollTop=0}
+else if(m.t==='scroll'&&RM.song)gotoAnchor(m)}
+const _lv=lv;lv=function(k){_lv(k);rmSendSong()};
+{let t=0;lc().addEventListener('scroll',()=>{if(t||RM.role!=='ctrl')return;t=setTimeout(()=>{t=0;rmSendScroll()},50)})}
+setInterval(()=>rmSend({t:'ping'}),5000);
+function rmStatus(){const on=!!RM.link,b=$('#sybtn');b.classList.toggle('on',on);b.textContent=on?(RM.role==='display'?'📡 Anzeige':'📡 Steuerung'):'📡';const l=$('#lsy');if(l)l.style.background=on?'#166534':'';syRender()}
+function rmLink(l,role){RM.link=l;RM.role=role;RM.msg='';if(role==='ctrl')rmSendSong(true);else rmSend({t:'hello'});rmStatus()}
+function rmDrop(){RM.link=null;rmStatus()}
+async function rmClose(){try{RM.link&&RM.link.close&&RM.link.close()}catch(e){}try{RM.peer&&RM.peer.destroy()}catch(e){}try{RM.pc&&RM.pc.close()}catch(e){}Object.assign(RM,{pick:null,role:null,link:null,peer:null,pc:null,code:'',msg:'',off:'',song:null,sig:'',txt:''});rmStatus();if($('#live').classList.contains('show'))lv()}
+// Online: PeerJS (nur für den Verbindungsaufbau Internet nötig)
+function loadPeer(){return new Promise((ok,no)=>{if(window.Peer)return ok();const e=document.createElement('script');e.src='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';e.onload=ok;e.onerror=()=>no(new Error('PeerJS konnte nicht geladen werden (kein Internet oder blockiert)'));document.head.append(e)})}
+async function rmHost(n){try{await loadPeer()}catch(e){RM.msg='Online nicht möglich: '+e.message+' – nutze unten „Offline koppeln“.';syRender();return}
+const code=String(Math.floor(100000+Math.random()*900000)),peer=new Peer('cps-'+code);RM.peer=peer;
+peer.on('open',()=>{RM.code=code;const e=$('#sycode');if(e)e.textContent=code});
+peer.on('connection',c=>{if(RM.link){c.close();return}c.on('open',()=>rmLink(c,'display'));c.on('data',rmRecv);c.on('close',rmDrop)});
+peer.on('error',e=>{if(e.type==='unavailable-id'&&(n||0)<3){try{peer.destroy()}catch(x){}rmHost((n||0)+1);return}RM.msg='Online-Fehler ('+e.type+') – nutze „Offline koppeln“.';syRender()})}
+async function rmJoin(code){try{await loadPeer()}catch(e){RM.msg=e.message;syRender();return}
+const peer=new Peer();RM.peer=peer;peer.on('open',()=>{const c=peer.connect('cps-'+code.trim(),{reliable:true});c.on('open',()=>rmLink(c,'ctrl'));c.on('data',rmRecv);c.on('close',rmDrop)});
+peer.on('error',e=>{RM.msg=e.type==='peer-unavailable'?'Code nicht gefunden – prüfe die Ziffern und ob die Anzeige gestartet ist.':'Online-Fehler ('+e.type+')';syRender()})}
+// Offline: manuelles Koppeln über zwei Codes (nur gleiches Netz / Hotspot nötig)
+const wire=(ch,role)=>{ch.onopen=()=>rmLink(ch,role);ch.onmessage=e=>rmRecv(e.data);ch.onclose=rmDrop};
+const waitIce=pc=>new Promise(res=>{if(pc.iceGatheringState==='complete')return res();const t=setTimeout(res,3000);pc.addEventListener('icegatheringstatechange',()=>{if(pc.iceGatheringState==='complete'){clearTimeout(t);res()}})});
+async function offHost(){const pc=new RTCPeerConnection({iceServers:[]});RM.pc=pc;wire(pc.createDataChannel('cps'),'display');await pc.setLocalDescription(await pc.createOffer());await waitIce(pc);return btoa(JSON.stringify(pc.localDescription))}
+async function offAnswer(code){const pc=new RTCPeerConnection({iceServers:[]});RM.pc=pc;pc.ondatachannel=e=>wire(e.channel,'ctrl');await pc.setRemoteDescription(JSON.parse(atob(code.trim())));await pc.setLocalDescription(await pc.createAnswer());await waitIce(pc);return btoa(JSON.stringify(pc.localDescription))}
+const offFinish=code=>RM.pc.setRemoteDescription(JSON.parse(atob(code.trim())));
+// Oberfläche
+$('#md').insertAdjacentHTML('beforeend','<div class="box" id="x-sy"><h3>📡 Fernsteuerung (iPad ↔ Laptop)</h3><div id="syb"></div><div class="flex gap-2" style="margin-top:10px"><button id="syz">Schließen</button></div></div>');
+$('#th').before(Object.assign(document.createElement('button'),{id:'sybtn',textContent:'📡',title:'Fernsteuerung: Stage auf einem anderen Gerät anzeigen',onclick:()=>{syRender();mdl('x-sy')}}));
+$('#lfo').before(Object.assign(document.createElement('button'),{id:'lsy',textContent:'📡',title:'Fernsteuerung',onclick:()=>{syRender();mdl('x-sy')}}));
+$('#syz').onclick=()=>$('#md').classList.remove('show');
+const cp=(t)=>navigator.clipboard&&navigator.clipboard.writeText(t).catch(()=>0);
+function syRender(){const b=$('#syb');if(!b)return;let h='';
+if(RM.link)h='<p>🟢 Verbunden – dieses Gerät ist <b>'+(RM.role==='display'?'die Anzeige (zeigt die Stage)':'die Steuerung (bestimmt Song und Scroll-Position)')+'</b>.</p><button id="syx">Trennen</button>';
+else if(!RM.pick)h='<p>Wähle die Rolle dieses Geräts:</p><div class="flex gap-2 flex-wrap"><button id="syd" class="pri">🖥 Anzeige (Laptop / Beamer)</button><button id="syc" class="pri">🎛 Steuerung (iPad)</button></div><p style="font-size:12px;opacity:.7">Die Anzeige zeigt, was die Steuerung vorgibt (Song, Tonart, Scroll-Position). Schrift, Farben und Griffbilder stellst du auf jedem Gerät getrennt ein.</p>';
+else if(RM.pick==='display')h='<p><b>Online:</b> Raum-Code <span id="sycode">'+(RM.code||'…')+'</span><br><small>Am Steuer-Gerät „Steuerung“ wählen und den Code eingeben.</small></p><details><summary><b>Offline koppeln</b> (ohne Internet, gleiches WLAN oder Hotspot)</summary><button id="syo">1) Anzeige-Code erzeugen</button><textarea id="syoo" readonly placeholder="Code erscheint hier – zum Steuer-Gerät schicken"></textarea><button id="syoc">Kopieren</button><textarea id="syoi" placeholder="2) Antwort-Code des Steuer-Geräts hier einfügen"></textarea><button id="syof" class="pri">3) Verbinden</button></details><button id="syx">Zurück</button>';
+else h='<p><b>Online:</b> Code der Anzeige eingeben</p><div class="flex gap-2"><input type="text" id="syci" inputmode="numeric" maxlength="6" placeholder="123456" size="8"><button id="syj" class="pri">Verbinden</button></div><details><summary><b>Offline koppeln</b></summary><textarea id="syai" placeholder="1) Anzeige-Code hier einfügen"></textarea><button id="sya">2) Antwort-Code erzeugen</button><textarea id="syao" readonly placeholder="Antwort-Code – zur Anzeige schicken"></textarea><button id="syac">Kopieren</button><p style="font-size:12px;opacity:.7">Danach auf der Anzeige „3) Verbinden“ drücken.</p></details><button id="syx">Zurück</button>';
+b.innerHTML=h+(RM.msg?'<p style="color:#d97706;font-size:13px">'+esc(RM.msg)+'</p>':'');
+const g=i=>$('#'+i),on=(i,fn)=>{const e=g(i);if(e)e.onclick=fn};
+on('syx',rmClose);on('syd',()=>{RM.pick='display';RM.msg='';syRender();rmHost()});on('syc',()=>{RM.pick='ctrl';RM.msg='';syRender()});
+on('syj',()=>{const c=g('syci').value;if(c)rmJoin(c)});
+on('syo',async()=>{g('syoo').value='…';try{g('syoo').value=await offHost()}catch(e){RM.msg='Fehler: '+e.message;syRender()}});on('syoc',()=>{g('syoo').select();cp(g('syoo').value)});
+on('syof',async()=>{try{await offFinish(g('syoi').value)}catch(e){RM.msg='Antwort-Code ungültig';syRender()}});
+on('sya',async()=>{try{g('syao').value='…';g('syao').value=await offAnswer(g('syai').value)}catch(e){RM.msg='Anzeige-Code ungültig';syRender()}});on('syac',()=>{g('syao').select();cp(g('syao').value)})}
+syRender();
 $('#b-ch').onclick=()=>ceOpen();
 mode('editor');
 </script><script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>0))</script></body></html>
