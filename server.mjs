@@ -400,7 +400,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('=======================================================');
   console.log(`  Laptop (Beamer):  http://localhost:${PORT}`);
   if (ips.length) {
-    ips.forEach(ip => console.log(`  iPad (im WLAN):   http://${ip}:${PORT}`));
+    ips.forEach(ip => console.log(`  Tablet (im WLAN): http://${ip}:${PORT}`));
   } else {
     console.log('  Hinweis: Kein WLAN/LAN erkannt – Hotspot aktivieren!');
   }
@@ -408,7 +408,7 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`  Song-Ordner:      ${SONGS_DIR} (automatisch synchron)`);
   } else {
     console.log('  Tipp: Lege einen Ordner "songs" hier an für gemeinsamen');
-    console.log('        .cho-Zugriff auf Laptop & iPad!');
+    console.log('        .cho-Zugriff auf Laptop & Tablet (iPad / Android)!');
   }
   console.log('=======================================================\n');
   console.log('  Drücke Strg+C zum Beenden.\n');

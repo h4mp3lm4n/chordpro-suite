@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="ChordPro">
   <link rel="apple-touch-icon" href="icon-180.png">
   <title>ChordPro Studio &amp; Live Performance Suite</title>
-  <link rel="stylesheet" href="css/app.css?v=13">
+  <link rel="stylesheet" href="css/app.css?v=14">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -51,7 +51,7 @@
     </nav>
 
     <div class="hdr-right">
-      <button id="sybtn" class="pill-btn" title="Fernsteuerung: iPad am Klavier ↔ Laptop am Beamer">
+      <button id="sybtn" class="pill-btn" title="Fernsteuerung: Tablet ↔ Laptop / Beamer">
         <span class="dot"></span><span>Remote</span>
       </button>
       <button id="fsb2" class="pill-btn warn" title="Speicherstatus / Bibliothek öffnen">💾 Lokal</button>
@@ -401,25 +401,27 @@
           <span id="lmet-dot"></span><span id="lmet-bpm">–</span>
         </button>
         <button id="lblack" class="btn-sm" title="Beamer schwarz schalten (Taste B)" hidden>⬛ <span class="lbt">Schwarz</span></button>
-        <button id="lsy" class="btn-sm" title="Fernsteuerung (iPad ↔ Laptop)">📡</button>
+        <button id="lsy" class="btn-sm" title="Fernsteuerung (Tablet ↔ Laptop)">📡</button>
         <button id="lgr" class="btn-sm" title="Stage-Einstellungen ein-/ausblenden">⚙ <span class="lbt">Optionen</span></button>
         <button id="lfo" class="btn-sm" title="Fokus-Modus (alle Leisten ausblenden)">⤢</button>
         <button id="lx" class="btn-sm danger" title="Live Stage beenden (Esc)">✕</button>
       </div>
     </div>
 
-    <!-- Row 2: Well-spaced Live Transport Bar (prevents accidental taps!) -->
+    <!-- Row 2: Generously spaced Live Transport Bar (prevents accidental taps!) -->
     <div id="lbar">
       <button id="lp" class="l-song-btn" title="Vorheriger Song (Bild↑)">⏮<span class="lbt"> Vorheriger</span></button>
 
       <div id="lcc">
         <button id="lup" class="l-step-btn" title="Abschnitt nach oben (Pfeil↑)">▲</button>
 
-        <div class="l-auto-pill">
+        <div class="l-auto-zone">
           <button id="ltm" class="l-spd-btn" title="AutoScroll langsamer (−)">−</button>
-          <button id="lpl" title="AutoScroll Start/Pause (Leertaste)">▶</button>
+          <div class="l-play-stack">
+            <button id="lpl" title="AutoScroll Start/Pause (Leertaste)">▶</button>
+            <span id="spv-mini" class="l-spd-val"></span>
+          </div>
           <button id="ltp" class="l-spd-btn" title="AutoScroll schneller (+)">+</button>
-          <span id="spv-mini" class="l-spd-val"></span>
         </div>
 
         <button id="ldw" class="l-step-btn" title="Abschnitt nach unten (Pfeil↓)">▼</button>
@@ -458,9 +460,9 @@
             </span>
           </label>
           <label id="sg-beamer-wrap" style="grid-column:1/-1" hidden>
-            <b>Beamer-Anzeige (unabhängig vom iPad)</b>
+            <b>Beamer-Anzeige (unabhängig vom Tablet)</b>
             <select id="sg-beamer">
-              <option value="follow">Wie Steuerung (iPad)</option>
+              <option value="follow">Wie Steuerung (Tablet)</option>
               <option value="lyrics">Publikum (Nur Text, zentriert, ohne Hinweise)</option>
               <option value="chords">Band (Akkorde + Text)</option>
               <option value="diagrams">Mit Griffbildern</option>
@@ -508,7 +510,7 @@
       </div>
     </div>
 
-    <div id="lblack-ind" hidden>⬛ PROJEKTOR IST SCHWARZ – DU KANNST AM IPAD IN RUHE WEITERBLÄTTERN</div>
+    <div id="lblack-ind" hidden>⬛ PROJEKTOR IST SCHWARZ – DU KANNST AM TABLET IN RUHE WEITERBLÄTTERN</div>
     <div id="ljump" hidden aria-label="Sektions-Sprungleiste"></div>
     <div id="lsc"></div>
     <div id="lblackout"></div>
@@ -591,7 +593,7 @@
 
     <!-- Hybrid Remote Control -->
     <div class="box" id="x-sy" style="width:min(660px,100%)">
-      <h3>📡 Fernsteuerung (iPad am Klavier ↔ Laptop am Beamer)</h3>
+      <h3>📡 Fernsteuerung (Tablet ↔ Laptop / Beamer)</h3>
       <div id="syb"></div>
       <div class="flex gap-2" style="margin-top:14px">
         <button class="xc" style="margin-left:auto">Schließen</button>
@@ -605,6 +607,6 @@
     </div>
   </div>
 
-  <script defer src="js/app.bundle.js?v=13"></script>
+  <script defer src="js/app.bundle.js?v=14"></script>
 </body>
 </html>

@@ -39,7 +39,8 @@ export function createLibrary({ storage, askConfirm, onOpenSong, onStartStage, o
     if (key === 'tempo') {
       return ((a.info.tempo || 0) - (b.info.tempo || 0)) * dir;
     }
-    return String(a.info[key] || '').localeCompare(String(b.info[key] || ''), 'de', { sensitivity: 'base' }) * dir;
+    const field = key === 'title' ? 'sortTitle' : key;
+    return String(a.info[field] || '').localeCompare(String(b.info[field] || ''), 'de', { sensitivity: 'base' }) * dir;
   }
 
   function updateSortHeaders() {

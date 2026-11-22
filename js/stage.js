@@ -522,6 +522,12 @@ export function createStage({ storage, remote, getEditorOpts, onExit }) {
         german: !!msg.german,
         view: msg.view || 'c'
       };
+      // Automatically dismiss Remote modal & QR overlay on the display as soon as a song arrives!
+      const md = $('#md');
+      if (md) md.classList.remove('show');
+      const qrOv = $('#beamer-qr-overlay');
+      if (qrOv) qrOv.classList.remove('show');
+
       if (!isOpen()) {
         start();
         $('#live').classList.add('focus');
@@ -771,6 +777,9 @@ export function createStage({ storage, remote, getEditorOpts, onExit }) {
     isOpen,
     goSong,
     togglePlay,
+    nudge,
+    adjustTempo,
+    toggleBlackout: () => setBlackoutLocal(!ctrlBlackout),
     handleRemoteMessage,
     onRemoteStatusChanged
   };

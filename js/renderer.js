@@ -16,7 +16,10 @@ export function directiveStyleCss(meta) {
     const num = parseFloat(v);
     return isNaN(num) || num <= 0 || num > 200 ? '' : (num * 1.333).toFixed(1) + 'px';
   };
-  const addColor = (key, prop) => { const c = safeColor(meta[key]); if (c) out.push(`${prop}:${c}`); };
+  const addColor = (key, prop) => {
+    const c = safeColor(meta[key] || meta[key.replace('colour', 'color')]);
+    if (c) out.push(`${prop}:${c}`);
+  };
   const addSize = (key, prop) => { const s = px(meta[key]); if (s) out.push(`${prop}:${s}`); };
   const addFont = (key, prop) => { const f = safeFontFamily(meta[key]); if (f) out.push(`${prop}:${f}`); };
 
@@ -35,6 +38,9 @@ export function directiveStyleCss(meta) {
   addColor('labelcolour', '--lcol');
   addSize('labelsize', '--lsz');
   addFont('labelfont', '--lf');
+  addColor('footercolour', '--fcol');
+  addSize('footersize', '--fsz');
+  addFont('footerfont', '--ff');
 
   return out.length ? ';' + out.join(';') : '';
 }
@@ -70,16 +76,28 @@ function buildMetaLine(meta, layout, opts) {
 export function buildSongModel(text, layout, opts = {}) {
   const instruments = opts.dins || [];
   const parsed = parseChordPro(text, instruments);
-  const tr = createTransposer(parsed, {
-    shift: opts.shift || 0,
+  const m = parsed.meta;
+
+  // Support {diagrams: off|false|0} directive
+  const diagramsDisabled = /^(off|false|0|no|none)$/i.test(String(m.diagrams || '').trim());
+  const effectiveInstruments = diagramsDisabled ? [] : instruments;
+
+  // Initial transposition (may be updated inline by {transpose: N} directives for modulations!)
+  let inlineShift = 0;
+  const makeTr = extra => createTransposer(parsed, {
+    shift: (opts.shift || 0) + extra,
     capo: opts.capo || 0,
     nota: opts.nota || 'std',
     german: opts.german ?? !!layout.german
   });
-  const m = parsed.meta;
+  let tr = makeTr(0);
 
-  const dh = instruments.length
-    ? renderDiagrams(parsed, tr.std, instruments, opts.th, { dsz: layout.dsz, dgp: layout.dgp }, tr.fmt)
+  // If song starts with {transpose: N}, apply it to diagrams too
+  const firstTranspose = parsed.items.find(it => it.k === 'transpose' || it.k === 'ln');
+  const diagramTr = firstTranspose && firstTranspose.k === 'transpose' ? makeTr(firstTranspose.v) : tr;
+
+  const dh = effectiveInstruments.length
+    ? renderDiagrams(parsed, diagramTr.std, effectiveInstruments, opts.th, { dsz: layout.dsz, dgp: layout.dgp }, diagramTr.fmt)
     : '';
 
   const head =
@@ -174,12 +192,28 @@ export function buildSongModel(text, layout, opts = {}) {
   let par = null;
   let lastBlank = false;
   let secCounter = 0;
+  let lastChorusItems = null;
+  let curChorusItems = null;
 
   const put = h => { (sec || (par = par || { l: [] })).l.push(h); };
   const closePar = () => { if (par) { groups.push(par); par = null; } };
   const pushSec = g => {
     while (g.l.length && g.l[g.l.length - 1].startsWith('<div class="sp-br">')) g.l.pop();
+    if (g.c === 'ch' && curChorusItems) {
+      lastChorusItems = curChorusItems.slice();
+      curChorusItems = null;
+    }
     groups.push(g);
+  };
+
+  const renderInlineItem = (item, isGrid) => {
+    if (item.k === 'cm') return opts.cm !== false ? `<div class="cm cm-${item.t}">${esc(item.v)}</div>` : '';
+    if (item.k === 'img') return safeImgHtml(item.v);
+    if (item.k === 'chd') return inlineChordHtml(item.v);
+    if (item.k === 'tx') return isGrid ? gridHtml(item.v) : `<div class="ln"><span class="tx">${esc(item.v)}</span></div>`;
+    if (item.k === 'ln') return `<div class="ln">${lineHtml(item.segs)}</div>`;
+    if (item.k === 'br') return '<div class="sp-br"></div>';
+    return '';
   };
 
   const defaultLabel = code => ({ sc: 'Refrain', sv: 'Strophe', sb: 'Bridge', st: 'Tab', sg: 'Grid' }[code] || '');
@@ -187,12 +221,36 @@ export function buildSongModel(text, layout, opts = {}) {
   for (const item of parsed.items) {
     if (item.k !== 'br') lastBlank = false;
 
+    if (item.k === 'transpose') {
+      inlineShift += item.v;
+      tr = makeTr(inlineShift);
+      continue;
+    }
+
+    if (item.k === 'chorus_ref') {
+      closePar();
+      if (sec) { pushSec(sec); sec = null; }
+      const secId = secCounter++;
+      const lbl = item.v || 'Refrain';
+      sections.push({ id: secId, label: lbl, type: 'sc' });
+      const lines = [`<div class="lab" data-sec="${secId}">${esc(lbl)}</div>`];
+      if (lastChorusItems && lastChorusItems.length) {
+        for (const ci of lastChorusItems) {
+          const h = renderInlineItem(ci, false);
+          if (h) lines.push(h);
+        }
+      }
+      groups.push({ c: 'ch', secId, l: lines });
+      continue;
+    }
+
     if (/^s[cvbtg]$/.test(item.k)) {
       closePar();
       if (sec) pushSec(sec);
       const secId = secCounter++;
       const labelText = item.v || defaultLabel(item.k);
       if (labelText) sections.push({ id: secId, label: labelText, type: item.k });
+      curChorusItems = item.k === 'sc' ? [] : null;
       sec = {
         c: item.k === 'sc' ? 'ch' : item.k === 'st' ? 'sec tab' : item.k === 'sg' ? 'sec grid' : 'sec',
         g: item.k === 'sg',
@@ -205,15 +263,17 @@ export function buildSongModel(text, layout, opts = {}) {
     } else if (item.k === 'br') {
       if (lastBlank) continue;
       lastBlank = true;
-      if (sec) sec.l.push('<div class="sp-br"></div>');
-      else closePar();
+      if (sec) {
+        if (curChorusItems) curChorusItems.push(item);
+        sec.l.push('<div class="sp-br"></div>');
+      } else closePar();
     } else if (item.k === 'np' || item.k === 'cb2') {
       closePar();
       if (sec) { pushSec(sec); sec = null; }
       groups.push({ brk: item.k === 'np' ? 'np' : 'col' });
     } else if (item.k === 'cm') {
       if (opts.cm !== false) {
-        // Also capture section-like comments for jump bar if no formal sections exist
+        if (curChorusItems) curChorusItems.push(item);
         const secId = secCounter++;
         if (item.t === 'c' && item.v && item.v.length <= 28) {
           sections.push({ id: secId, label: item.v, type: 'cm' });
@@ -223,14 +283,18 @@ export function buildSongModel(text, layout, opts = {}) {
         }
       }
     } else if (item.k === 'img') {
+      if (curChorusItems) curChorusItems.push(item);
       const h = safeImgHtml(item.v);
       if (h) put(h);
     } else if (item.k === 'chd') {
+      if (curChorusItems) curChorusItems.push(item);
       const h = inlineChordHtml(item.v);
       if (h) put(h);
     } else if (item.k === 'tx') {
+      if (curChorusItems) curChorusItems.push(item);
       put(sec && sec.g ? gridHtml(item.v) : `<div class="ln"><span class="tx">${esc(item.v)}</span></div>`);
     } else {
+      if (curChorusItems) curChorusItems.push(item);
       put(`<div class="ln">${lineHtml(item.segs)}</div>`);
     }
   }
@@ -330,11 +394,18 @@ export function paginate(model, W, H, pad, gap, cols, sty, cls = '') {
   return pages;
 }
 
+export function pageDims(layout, pagetype) {
+  const pt = String(pagetype || 'a4').toLowerCase().trim();
+  let w = 794, h = 1123; // A4 @ 96dpi
+  if (pt === 'letter') { w = 816; h = 1056; }
+  else if (pt === 'a5') { w = 559; h = 794; }
+  return layout.land ? { W: h, H: w } : { W: w, H: h };
+}
+
 export function renderPagesA4(text, layout, opts) {
   const model = buildSongModel(text, layout, opts);
   const M = model.meta;
-  const W = layout.land ? 1123 : 794;
-  const H = layout.land ? 794 : 1123;
+  const { W, H } = pageDims(layout, M.pagetype);
   const cols = +(M.columns || M.col) || opts.cols || 1;
   const gap = 24;
   const ex = directiveStyleCss(M);

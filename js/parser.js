@@ -101,6 +101,16 @@ export function parseChordPro(text, activeInstruments = []) {
         items.push({ k: 'img', v: val });
         continue;
       }
+      if (name === 'chorus') {
+        items.push({ k: 'chorus_ref', v: val });
+        continue;
+      }
+      if (name === 'transpose') {
+        const delta = parseInt(val, 10) || 0;
+        items.push({ k: 'transpose', v: delta });
+        if (items.length <= 1) meta.transpose = String(delta);
+        continue;
+      }
 
       name = ALIASES[name] ||
         name.replace(/^start_of_(.)\w*/, 's$1').replace(/^end_of_(.)\w*/, 'e$1');
@@ -228,6 +238,7 @@ export function songInfo(song) {
   const durationSec = parseDurationSec(m.duration);
   return {
     title: m.title || 'Ohne Titel',
+    sortTitle: m.sorttitle || m.title || 'Ohne Titel',
     subtitle: m.subtitle || '',
     artist: m.artist || '',
     key: m.key || '',

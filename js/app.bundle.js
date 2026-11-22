@@ -622,6 +622,16 @@ function parseChordPro(text, activeInstruments = []) {
         items.push({ k: 'img', v: val });
         continue;
       }
+      if (name === 'chorus') {
+        items.push({ k: 'chorus_ref', v: val });
+        continue;
+      }
+      if (name === 'transpose') {
+        const delta = parseInt(val, 10) || 0;
+        items.push({ k: 'transpose', v: delta });
+        if (items.length <= 1) meta.transpose = String(delta);
+        continue;
+      }
 
       name = ALIASES[name] ||
         name.replace(/^start_of_(.)\w*/, 's$1').replace(/^end_of_(.)\w*/, 'e$1');
@@ -749,6 +759,7 @@ function songInfo(song) {
   const durationSec = parseDurationSec(m.duration);
   return {
     title: m.title || 'Ohne Titel',
+    sortTitle: m.sorttitle || m.title || 'Ohne Titel',
     subtitle: m.subtitle || '',
     artist: m.artist || '',
     key: m.key || '',
@@ -2206,7 +2217,10 @@ function directiveStyleCss(meta) {
     const num = parseFloat(v);
     return isNaN(num) || num <= 0 || num > 200 ? '' : (num * 1.333).toFixed(1) + 'px';
   };
-  const addColor = (key, prop) => { const c = safeColor(meta[key]); if (c) out.push(`${prop}:${c}`); };
+  const addColor = (key, prop) => {
+    const c = safeColor(meta[key] || meta[key.replace('colour', 'color')]);
+    if (c) out.push(`${prop}:${c}`);
+  };
   const addSize = (key, prop) => { const s = px(meta[key]); if (s) out.push(`${prop}:${s}`); };
   const addFont = (key, prop) => { const f = safeFontFamily(meta[key]); if (f) out.push(`${prop}:${f}`); };
 
@@ -2225,6 +2239,9 @@ function directiveStyleCss(meta) {
   addColor('labelcolour', '--lcol');
   addSize('labelsize', '--lsz');
   addFont('labelfont', '--lf');
+  addColor('footercolour', '--fcol');
+  addSize('footersize', '--fsz');
+  addFont('footerfont', '--ff');
 
   return out.length ? ';' + out.join(';') : '';
 }
@@ -2260,16 +2277,28 @@ function buildMetaLine(meta, layout, opts) {
 function buildSongModel(text, layout, opts = {}) {
   const instruments = opts.dins || [];
   const parsed = parseChordPro(text, instruments);
-  const tr = createTransposer(parsed, {
-    shift: opts.shift || 0,
+  const m = parsed.meta;
+
+  // Support {diagrams: off|false|0} directive
+  const diagramsDisabled = /^(off|false|0|no|none)$/i.test(String(m.diagrams || '').trim());
+  const effectiveInstruments = diagramsDisabled ? [] : instruments;
+
+  // Initial transposition (may be updated inline by {transpose: N} directives for modulations!)
+  let inlineShift = 0;
+  const makeTr = extra => createTransposer(parsed, {
+    shift: (opts.shift || 0) + extra,
     capo: opts.capo || 0,
     nota: opts.nota || 'std',
     german: opts.german ?? !!layout.german
   });
-  const m = parsed.meta;
+  let tr = makeTr(0);
 
-  const dh = instruments.length
-    ? renderDiagrams(parsed, tr.std, instruments, opts.th, { dsz: layout.dsz, dgp: layout.dgp }, tr.fmt)
+  // If song starts with {transpose: N}, apply it to diagrams too
+  const firstTranspose = parsed.items.find(it => it.k === 'transpose' || it.k === 'ln');
+  const diagramTr = firstTranspose && firstTranspose.k === 'transpose' ? makeTr(firstTranspose.v) : tr;
+
+  const dh = effectiveInstruments.length
+    ? renderDiagrams(parsed, diagramTr.std, effectiveInstruments, opts.th, { dsz: layout.dsz, dgp: layout.dgp }, diagramTr.fmt)
     : '';
 
   const head =
@@ -2364,12 +2393,28 @@ function buildSongModel(text, layout, opts = {}) {
   let par = null;
   let lastBlank = false;
   let secCounter = 0;
+  let lastChorusItems = null;
+  let curChorusItems = null;
 
   const put = h => { (sec || (par = par || { l: [] })).l.push(h); };
   const closePar = () => { if (par) { groups.push(par); par = null; } };
   const pushSec = g => {
     while (g.l.length && g.l[g.l.length - 1].startsWith('<div class="sp-br">')) g.l.pop();
+    if (g.c === 'ch' && curChorusItems) {
+      lastChorusItems = curChorusItems.slice();
+      curChorusItems = null;
+    }
     groups.push(g);
+  };
+
+  const renderInlineItem = (item, isGrid) => {
+    if (item.k === 'cm') return opts.cm !== false ? `<div class="cm cm-${item.t}">${esc(item.v)}</div>` : '';
+    if (item.k === 'img') return safeImgHtml(item.v);
+    if (item.k === 'chd') return inlineChordHtml(item.v);
+    if (item.k === 'tx') return isGrid ? gridHtml(item.v) : `<div class="ln"><span class="tx">${esc(item.v)}</span></div>`;
+    if (item.k === 'ln') return `<div class="ln">${lineHtml(item.segs)}</div>`;
+    if (item.k === 'br') return '<div class="sp-br"></div>';
+    return '';
   };
 
   const defaultLabel = code => ({ sc: 'Refrain', sv: 'Strophe', sb: 'Bridge', st: 'Tab', sg: 'Grid' }[code] || '');
@@ -2377,12 +2422,36 @@ function buildSongModel(text, layout, opts = {}) {
   for (const item of parsed.items) {
     if (item.k !== 'br') lastBlank = false;
 
+    if (item.k === 'transpose') {
+      inlineShift += item.v;
+      tr = makeTr(inlineShift);
+      continue;
+    }
+
+    if (item.k === 'chorus_ref') {
+      closePar();
+      if (sec) { pushSec(sec); sec = null; }
+      const secId = secCounter++;
+      const lbl = item.v || 'Refrain';
+      sections.push({ id: secId, label: lbl, type: 'sc' });
+      const lines = [`<div class="lab" data-sec="${secId}">${esc(lbl)}</div>`];
+      if (lastChorusItems && lastChorusItems.length) {
+        for (const ci of lastChorusItems) {
+          const h = renderInlineItem(ci, false);
+          if (h) lines.push(h);
+        }
+      }
+      groups.push({ c: 'ch', secId, l: lines });
+      continue;
+    }
+
     if (/^s[cvbtg]$/.test(item.k)) {
       closePar();
       if (sec) pushSec(sec);
       const secId = secCounter++;
       const labelText = item.v || defaultLabel(item.k);
       if (labelText) sections.push({ id: secId, label: labelText, type: item.k });
+      curChorusItems = item.k === 'sc' ? [] : null;
       sec = {
         c: item.k === 'sc' ? 'ch' : item.k === 'st' ? 'sec tab' : item.k === 'sg' ? 'sec grid' : 'sec',
         g: item.k === 'sg',
@@ -2395,15 +2464,17 @@ function buildSongModel(text, layout, opts = {}) {
     } else if (item.k === 'br') {
       if (lastBlank) continue;
       lastBlank = true;
-      if (sec) sec.l.push('<div class="sp-br"></div>');
-      else closePar();
+      if (sec) {
+        if (curChorusItems) curChorusItems.push(item);
+        sec.l.push('<div class="sp-br"></div>');
+      } else closePar();
     } else if (item.k === 'np' || item.k === 'cb2') {
       closePar();
       if (sec) { pushSec(sec); sec = null; }
       groups.push({ brk: item.k === 'np' ? 'np' : 'col' });
     } else if (item.k === 'cm') {
       if (opts.cm !== false) {
-        // Also capture section-like comments for jump bar if no formal sections exist
+        if (curChorusItems) curChorusItems.push(item);
         const secId = secCounter++;
         if (item.t === 'c' && item.v && item.v.length <= 28) {
           sections.push({ id: secId, label: item.v, type: 'cm' });
@@ -2413,14 +2484,18 @@ function buildSongModel(text, layout, opts = {}) {
         }
       }
     } else if (item.k === 'img') {
+      if (curChorusItems) curChorusItems.push(item);
       const h = safeImgHtml(item.v);
       if (h) put(h);
     } else if (item.k === 'chd') {
+      if (curChorusItems) curChorusItems.push(item);
       const h = inlineChordHtml(item.v);
       if (h) put(h);
     } else if (item.k === 'tx') {
+      if (curChorusItems) curChorusItems.push(item);
       put(sec && sec.g ? gridHtml(item.v) : `<div class="ln"><span class="tx">${esc(item.v)}</span></div>`);
     } else {
+      if (curChorusItems) curChorusItems.push(item);
       put(`<div class="ln">${lineHtml(item.segs)}</div>`);
     }
   }
@@ -2520,11 +2595,18 @@ function paginate(model, W, H, pad, gap, cols, sty, cls = '') {
   return pages;
 }
 
+function pageDims(layout, pagetype) {
+  const pt = String(pagetype || 'a4').toLowerCase().trim();
+  let w = 794, h = 1123; // A4 @ 96dpi
+  if (pt === 'letter') { w = 816; h = 1056; }
+  else if (pt === 'a5') { w = 559; h = 794; }
+  return layout.land ? { W: h, H: w } : { W: w, H: h };
+}
+
 function renderPagesA4(text, layout, opts) {
   const model = buildSongModel(text, layout, opts);
   const M = model.meta;
-  const W = layout.land ? 1123 : 794;
-  const H = layout.land ? 794 : 1123;
+  const { W, H } = pageDims(layout, M.pagetype);
   const cols = +(M.columns || M.col) || opts.cols || 1;
   const gap = 24;
   const ex = directiveStyleCss(M);
@@ -2692,23 +2774,21 @@ async function exportPdf(songList, layout, currentOpts, useCurrentOpts = false) 
   showToast('PDF erstellt');
 }
 
-return { formatChordHtml, directiveStyleCss, sheetCss, buildSongModel, paginate, renderPagesA4, exportPdf };
+return { formatChordHtml, directiveStyleCss, sheetCss, buildSongModel, paginate, pageDims, renderPagesA4, exportPdf };
 })();
 
 // === remote.js ===
 const __m_remote = (() => {
-// Hybrid Remote Control Engine (iPad <-> Laptop)
+// Hybrid Remote Control Engine (Tablet <-> Laptop / Beamer)
 // Mode 1 (Auto): Local Laptop Server (ws:// + SSE fallback, 100% offline, <5ms latency)
 // Mode 2 (Online): WSS Relay (Custom Cloudflare Worker Port 443 OR Zero-Setup MQTT-over-WSS)
-// No WebRTC / no iOS mDNS blocks / automatic iOS visibilitychange reconnect + offline QR pairing
+// Works identically on iPadOS, Android tablets & desktops (no WebRTC / no iOS mDNS blocks)
 
 const { $, esc, lsGet, lsSet, uid, showToast } = __m_utils;
 const { qrToSvg } = __m_qr;
 
-const MQTT_BROKERS = [
-  'wss://broker.emqx.io:8084/mqtt',
-  'wss://broker.hivemq.com:8884/mqtt'
-];
+// Verified reliable MQTT-over-WSS broker (fixed primary so both devices ALWAYS land on the exact same broker!)
+const DEFAULT_MQTT_BROKER = 'wss://test.mosquitto.org:8081/mqtt';
 
 // --- Minimal Zero-Dependency MQTT 3.1.1 over WebSocket Client ---
 class MiniMqttClient {
@@ -2874,8 +2954,8 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
   let reconnectTimer = null;
   let reconnectAttempt = 0;
   let pingTimer = null;
+  let helloTimer = null;
   let lastPongAt = 0;
-  let brokerIdx = 0;
   let manualDisconnect = false;
 
   async function detectServer() {
@@ -2942,29 +3022,55 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
     }
   }
 
+  function hasRemotePeer() {
+    return state.role === 'display' ? state.peers.ctrl > 0 : state.peers.display > 0;
+  }
+
   function handleIncoming(raw) {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
     if (!msg || msg._sid === clientId) return;
 
+    if (msg.t === 'ping') {
+      // Reply directly so peer-to-peer latency works in both local and online MQTT mode
+      send({ t: 'pong', ts: msg.ts, role: state.role });
+      return;
+    }
+
     if (msg.t === 'pong') {
       lastPongAt = Date.now();
       if (msg.ts) state.latencyMs = Math.max(1, Date.now() - msg.ts);
+      if (msg.role === 'ctrl') state.peers.ctrl = Math.max(1, state.peers.ctrl);
+      if (msg.role === 'display') state.peers.display = Math.max(1, state.peers.display);
       notify();
+      return;
+    }
+
+    if (msg.t === 'test-ping') {
+      showToast('📡 Test-Signal von der Gegenseite empfangen!', 2500);
+      send({ t: 'test-ack' });
+      return;
+    }
+
+    if (msg.t === 'test-ack') {
+      showToast('✅ Gegenseite hat das Test-Signal bestätigt!', 2500);
       return;
     }
 
     if (msg.t === 'presence') {
       state.peers = { ctrl: msg.ctrl || 0, display: msg.display || 0 };
+      if (state.role === 'ctrl' && state.peers.display > 0 && onReceive) {
+        onReceive({ t: 'hello' });
+      }
       notify();
       return;
     }
 
     if (msg.t === 'hello') {
-      // In MQTT mode, reply with presence & let app push current song
-      if (state.mode === 'online-mqtt') {
-        send({ t: 'peer-hi', role: state.role });
-      }
+      if (msg.role === 'ctrl') state.peers.ctrl = Math.max(1, state.peers.ctrl);
+      if (msg.role === 'display') state.peers.display = Math.max(1, state.peers.display);
+      send({ t: 'peer-hi', role: state.role });
+      notify();
       if (onReceive) onReceive(msg);
       return;
     }
@@ -2973,6 +3079,10 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
       if (msg.role === 'ctrl') state.peers.ctrl = Math.max(1, state.peers.ctrl);
       if (msg.role === 'display') state.peers.display = Math.max(1, state.peers.display);
       notify();
+      // If a display just greeted us while we're controller, immediately push current song!
+      if (state.role === 'ctrl' && msg.role === 'display' && onReceive) {
+        onReceive({ t: 'hello' });
+      }
       return;
     }
 
@@ -2982,14 +3092,24 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
   function startHeartbeat() {
     stopHeartbeat();
     lastPongAt = Date.now();
+    // Periodically announce presence until the other device responds (solves join-order race!)
+    helloTimer = setInterval(() => {
+      if (!state.connected) return;
+      if (!hasRemotePeer()) {
+        send({ t: 'hello', role: state.role });
+      } else {
+        clearInterval(helloTimer);
+        helloTimer = null;
+      }
+    }, 2500);
+
     pingTimer = setInterval(() => {
       if (!state.connected) return;
-      if (state.mode !== 'online-mqtt') {
-        if (Date.now() - lastPongAt > 14000) {
-          // Stale connection (common after iOS sleep) -> force reconnect
-          scheduleReconnect(true);
-          return;
-        }
+      if (state.mode !== 'online-mqtt' && Date.now() - lastPongAt > 14000) {
+        scheduleReconnect(true);
+        return;
+      }
+      if (state.mode !== 'online-mqtt' || hasRemotePeer()) {
         send({ t: 'ping', ts: Date.now() });
       }
     }, 5000);
@@ -2997,7 +3117,9 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
 
   function stopHeartbeat() {
     clearInterval(pingTimer);
+    clearInterval(helloTimer);
     pingTimer = null;
+    helloTimer = null;
   }
 
   function teardownTransport() {
@@ -3040,9 +3162,6 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
     const onDrop = reason => {
       if (manualDisconnect) return;
       state.connected = false;
-      if (state.mode === 'online-mqtt') {
-        brokerIdx = (brokerIdx + 1) % MQTT_BROKERS.length;
-      }
       if (reason && reconnectAttempt > 2) {
         state.error = 'Verbindung unterbrochen – versuche erneuten Verbindungsaufbau…';
       }
@@ -3061,9 +3180,8 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
       const wsUrl = `${state.customRelayUrl}${sep}room=${encodeURIComponent(state.room)}&role=${encodeURIComponent(state.role)}`;
       openPlainWebSocket(wsUrl, onOpen, onDrop);
     } else {
-      const broker = MQTT_BROKERS[brokerIdx % MQTT_BROKERS.length];
       const topic = `chordpro-studio/v2/room/${state.room}`;
-      transport = new MiniMqttClient(broker, clientId, topic, handleIncoming, onOpen, onDrop);
+      transport = new MiniMqttClient(DEFAULT_MQTT_BROKER, clientId, topic, handleIncoming, onOpen, onDrop);
     }
   }
 
@@ -3190,17 +3308,22 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
       ? `<span class="badge badge-ok">⚡ Lokaler Laptop-Server (Offline, WLAN)</span>`
       : state.mode === 'custom-wss'
         ? `<span class="badge badge-ok">☁️ Eigener Cloud-Relay (WSS Port 443)</span>`
-        : `<span class="badge badge-info">🌐 Online WSS-Relay (iOS-kompatibel)</span>`;
+        : `<span class="badge badge-info">🌐 Online WSS-Relay (iPadOS &amp; Android)</span>`;
 
     let html = `<div style="margin-bottom:10px">${modeBadge}</div>`;
 
     if (state.role) {
-      const statusDot = state.connected ? '🟢 Verbunden' : state.reconnecting ? '🟡 Verbinde neu…' : '🟡 Verbinde…';
-      const roleLabel = state.role === 'display' ? '🖥 Anzeige (Laptop / Beamer)' : '🎹 Steuerung (iPad / Klavier)';
+      const paired = hasRemotePeer();
+      const statusDot = !state.connected
+        ? (state.reconnecting ? '🟡 Verbinde neu…' : '🟡 Verbinde mit Server…')
+        : paired
+          ? '🟢 Gekoppelt &amp; bereit'
+          : '🟡 Relay aktiv · Warte auf Gegenseite…';
+      const roleLabel = state.role === 'display' ? '🖥 Anzeige (Laptop / Beamer)' : '🎹 Steuerung (Tablet)';
       const latencyTxt = state.latencyMs != null ? ` · ${state.latencyMs} ms` : '';
       const peerTxt = state.role === 'display'
-        ? (state.peers.ctrl > 0 ? ` · ${state.peers.ctrl} Steuerung aktiv` : ' · Warte auf iPad…')
-        : (state.peers.display > 0 ? ` · ${state.peers.display} Anzeige aktiv` : ' · Warte auf Anzeige…');
+        ? (state.peers.ctrl > 0 ? ` · ${state.peers.ctrl} Steuerung verbunden` : '')
+        : (state.peers.display > 0 ? ` · ${state.peers.display} Anzeige verbunden` : '');
 
       html += `
         <div class="remote-card">
@@ -3219,25 +3342,27 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
           <div class="qr-panel">
             <div class="qr-box">${qrSvg}</div>
             <div class="qr-info">
-              <div class="qr-step">1. iPad-Kamera auf den QR-Code halten</div>
-              <div class="muted" style="font-size:12px;margin:4px 0 8px">Safari öffnet direkt die verbundene Steuerung (kein WebRTC, kein iOS-Block).</div>
+              <div class="qr-step">1. Tablet-Kamera auf den QR-Code halten</div>
+              <div class="muted" style="font-size:12px;margin:4px 0 8px">Funktioniert auf iPad (Safari) &amp; Android (Chrome) – kein WebRTC-Block. Sobald am Tablet ein Song in Live Stage startet, blendet sich dieses Fenster automatisch aus.</div>
               <div class="qr-code-num">${esc(state.room)}</div>
               ${ipPicker}
               <div class="muted" style="font-size:11px;word-break:break-all;margin-top:6px">${esc(joinUrl)}</div>
               <div class="flex gap-2 flex-wrap" style="margin-top:8px">
                 <button class="btn-sm" id="sy-copy">Link kopieren</button>
                 <button class="btn-sm" id="sy-beamer-qr">📺 QR auf Beamer zeigen</button>
+                <button class="btn-sm" id="sy-test">🧪 Test-Signal</button>
               </div>
             </div>
           </div>`;
       } else {
         html += `
           <p class="muted" style="font-size:13px;margin:10px 0">
-            Öffne jetzt <b>Live Stage</b>: Jeder Songwechsel, jedes Scrollen, jeder Sektions-Sprung und <b>Beamer Schwarz</b> wird direkt an den Laptop übertragen.
+            Öffne jetzt <b>Live Stage</b>: Jeder Songwechsel, jedes Scrollen, jeder Sektions-Sprung und <b>Beamer Schwarz</b> wird direkt an die Anzeige übertragen.
           </p>
           <div class="flex gap-2 flex-wrap">
             <button id="sy-go-stage" class="pri">🎤 Live Stage öffnen</button>
             <button id="sy-resync">↻ Neu synchronisieren</button>
+            <button id="sy-test">🧪 Test-Signal</button>
           </div>`;
       }
 
@@ -3248,11 +3373,11 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
         <div class="remote-roles">
           <button id="sy-display" class="role-btn">
             <span class="role-title">🖥 Anzeige (Laptop / Beamer)</span>
-            <span class="role-desc">Erzeugt Raum-Code &amp; QR-Code fürs iPad. Empfängt Song, Scroll &amp; Blackout.</span>
+            <span class="role-desc">Erzeugt Raum-Code &amp; QR-Code fürs Tablet. Empfängt Song, Scroll &amp; Blackout.</span>
           </button>
           <div class="role-btn role-ctrl-box">
-            <span class="role-title">🎹 Steuerung (iPad am Klavier)</span>
-            <span class="role-desc">Code der Anzeige eingeben (oder einfach deren QR-Code scannen):</span>
+            <span class="role-title">🎹 Steuerung (Tablet)</span>
+            <span class="role-desc">Code der Anzeige eingeben (oder einfach deren QR-Code mit iPad / Android scannen):</span>
             <div class="flex gap-2" style="margin-top:8px">
               <input type="text" id="sy-code-in" inputmode="numeric" maxlength="12" placeholder="${state.mode === 'local' ? '4-stellig' : '6-stellig'}" style="width:120px;text-align:center;font-weight:700;letter-spacing:2px">
               <button id="sy-join" class="pri">Verbinden</button>
@@ -3265,7 +3390,7 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
           <details class="remote-adv">
             <summary>⚙ Offline-Bühne &amp; Eigener Cloud-Relay</summary>
             <div style="margin-top:8px;font-size:12px;line-height:1.5">
-              <p><b>100 % Offline (ohne Internet):</b> Starte auf dem Laptop <code>start-stage-server.bat</code> (oder <code>node server.mjs</code>) und verbinde Laptop &amp; iPad per WLAN/Hotspot. Die App erkennt den lokalen Server dann automatisch!</p>
+              <p><b>100 % Offline (ohne Internet):</b> Starte auf dem Laptop <code>start-stage-server.bat</code> (oder <code>node server.mjs</code>) und verbinde Laptop &amp; Tablet per WLAN/Hotspot. Die App erkennt den lokalen Server dann automatisch!</p>
               <p style="margin-top:8px"><b>Eigener Cloudflare WSS-Relay (Port 443, optional):</b></p>
               <div class="flex gap-2" style="margin-top:4px">
                 <input type="text" id="sy-relay-in" value="${esc(state.customRelayUrl)}" placeholder="wss://chordpro-relay.xxx.workers.dev/ws" style="flex:1;font-size:12px">
@@ -3314,6 +3439,10 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
       if (onReceive) onReceive({ t: 'hello' });
       showToast('Synchronisiert');
     });
+    on('sy-test', () => {
+      send({ t: 'test-ping' });
+      showToast('Test-Signal gesendet…');
+    });
     on('sy-relay-save', () => {
       setCustomRelayUrl($('#sy-relay-in')?.value || '');
       showToast(state.customRelayUrl ? 'Eigener Cloud-Relay gespeichert' : 'Standard-WSS-Relay aktiv');
@@ -3334,7 +3463,7 @@ function createRemote({ onReceive, onStatusChange, onOpenModal }) {
     const joinUrl = getJoinUrl('ctrl');
     ov.innerHTML = `
       <div class="bqr-card">
-        <h2>iPad verbinden</h2>
+        <h2>Tablet verbinden</h2>
         <div class="bqr-svg">${qrToSvg(joinUrl, 300)}</div>
         <div class="bqr-code">Code: <b>${esc(state.room)}</b></div>
         <div class="bqr-url">${esc(joinUrl)}</div>
@@ -3912,6 +4041,12 @@ function createStage({ storage, remote, getEditorOpts, onExit }) {
         german: !!msg.german,
         view: msg.view || 'c'
       };
+      // Automatically dismiss Remote modal & QR overlay on the display as soon as a song arrives!
+      const md = $('#md');
+      if (md) md.classList.remove('show');
+      const qrOv = $('#beamer-qr-overlay');
+      if (qrOv) qrOv.classList.remove('show');
+
       if (!isOpen()) {
         start();
         $('#live').classList.add('focus');
@@ -4161,6 +4296,9 @@ function createStage({ storage, remote, getEditorOpts, onExit }) {
     isOpen,
     goSong,
     togglePlay,
+    nudge,
+    adjustTempo,
+    toggleBlackout: () => setBlackoutLocal(!ctrlBlackout),
     handleRemoteMessage,
     onRemoteStatusChanged
   };
@@ -4766,7 +4904,8 @@ function createLibrary({ storage, askConfirm, onOpenSong, onStartStage, onUpdate
     if (key === 'tempo') {
       return ((a.info.tempo || 0) - (b.info.tempo || 0)) * dir;
     }
-    return String(a.info[key] || '').localeCompare(String(b.info[key] || ''), 'de', { sensitivity: 'base' }) * dir;
+    const field = key === 'title' ? 'sortTitle' : key;
+    return String(a.info[field] || '').localeCompare(String(b.info[field] || ''), 'de', { sensitivity: 'base' }) * dir;
   }
 
   function updateSortHeaders() {
@@ -5316,12 +5455,15 @@ async function boot() {
   function updateRemotePill(st) {
     const btn = $('#sybtn');
     if (!btn) return;
-    btn.classList.toggle('connected', st.connected);
-    btn.classList.toggle('waiting', !st.connected && !!st.role);
-    if (st.connected) {
+    const paired = st.connected && (st.role === 'display' ? st.peers.ctrl > 0 : st.peers.display > 0);
+    btn.classList.toggle('connected', paired);
+    btn.classList.toggle('waiting', !!st.role && !paired);
+    if (paired) {
       btn.innerHTML = st.role === 'display'
         ? `<span class="dot ok"></span><span>Anzeige</span>`
         : `<span class="dot ok"></span><span>Steuerung</span>`;
+    } else if (st.connected && st.role) {
+      btn.innerHTML = `<span class="dot warn"></span><span>Warte…</span>`;
     } else if (st.role) {
       btn.innerHTML = `<span class="dot warn"></span><span>Verbinde…</span>`;
     } else {
@@ -5448,26 +5590,43 @@ async function boot() {
   let midiLearnAction = null;
   const midiMap = lsGet('cp_midi', {});
   const midiActions = {
-    next: 'Nächster Song',
-    prev: 'Vorheriger Song',
-    scroll: 'AutoScroll Start/Pause'
+    next: 'Nächster Song (⏭)',
+    prev: 'Vorheriger Song (⏮)',
+    scroll: 'AutoScroll Start / Pause (▶)',
+    scrollUp: 'Scroll hoch (▲)',
+    scrollDown: 'Scroll runter (▼)',
+    speedUp: 'Scroll-Tempo schneller (+)',
+    speedDown: 'Scroll-Tempo langsamer (−)',
+    blackout: 'Beamer Schwarz an / aus (⬛)'
   };
 
   function renderMidiUi() {
     $('#mal').innerHTML = Object.keys(midiActions).map(act => `
       <div class="flex gap-2 items-center my-2">
-        <span style="flex:1">${midiActions[act]}: <code>${esc(midiMap[act] || '–')}</code></span>
-        <button class="btn-sm" data-a="${act}">${midiLearnAction === act ? 'Warte auf Pedal…' : 'Anlernen'}</button>
+        <span style="flex:1;font-size:13px">${midiActions[act]}: <code>${esc(midiMap[act] || '–')}</code></span>
+        <button class="btn-sm${midiLearnAction === act ? ' pri' : ''}" data-a="${act}">${midiLearnAction === act ? 'Warte auf Signal…' : 'Anlernen'}</button>
+        ${midiMap[act] ? `<button class="btn-xs danger" data-clr="${act}" title="Zuweisung entfernen">✕</button>` : ''}
       </div>`).join('');
-    $$('#mal button').forEach(b => {
-      b.onclick = () => { midiLearnAction = b.dataset.a; renderMidiUi(); };
+    $$('#mal [data-a]').forEach(b => {
+      b.onclick = () => {
+        midiLearnAction = midiLearnAction === b.dataset.a ? null : b.dataset.a;
+        renderMidiUi();
+      };
+    });
+    $$('#mal [data-clr]').forEach(b => {
+      b.onclick = () => {
+        delete midiMap[b.dataset.clr];
+        lsSet('cp_midi', midiMap);
+        renderMidiUi();
+      };
     });
   }
 
   function handleMidiMessage(e) {
     const [status, d1, d2] = e.data;
     const type = status & 0xf0;
-    if (!(type === 0x90 || type === 0xb0) || !d2) return;
+    // Accept Note On (0x90), Control Change (0xb0) with value > 0, and Program Change (0xc0)
+    if (!((type === 0x90 && d2 > 0) || (type === 0xb0 && d2 > 0) || type === 0xc0)) return;
     const key = `${type.toString(16)}-${d1}`;
     if (midiLearnAction) {
       midiMap[midiLearnAction] = key;
@@ -5477,16 +5636,27 @@ async function boot() {
       return;
     }
     const act = Object.keys(midiMap).find(x => midiMap[x] === key);
+    if (!act || !stage.isOpen()) {
+      // Allow song switching even if stage already open; ignore others when not in stage
+      if (act === 'next' && stage.isOpen()) stage.goSong(1);
+      else if (act === 'prev' && stage.isOpen()) stage.goSong(-1);
+      return;
+    }
     if (act === 'next') stage.goSong(1);
     else if (act === 'prev') stage.goSong(-1);
-    else if (act === 'scroll' && stage.isOpen()) stage.togglePlay();
+    else if (act === 'scroll') stage.togglePlay();
+    else if (act === 'scrollUp') stage.nudge(-1);
+    else if (act === 'scrollDown') stage.nudge(1);
+    else if (act === 'speedUp') stage.adjustTempo(5);
+    else if (act === 'speedDown') stage.adjustTempo(-5);
+    else if (act === 'blackout') stage.toggleBlackout();
   }
 
   async function openMidiModal() {
     openModal('x-mi');
     renderMidiUi();
     if (!navigator.requestMIDIAccess) {
-      $('#mst').textContent = 'Web MIDI wird von diesem Browser nicht unterstützt (z. B. iOS Safari). Bluetooth-Tastatur-Pedale (Bild↑/Bild↓/Pfeile) funktionieren trotzdem.';
+      $('#mst').textContent = 'Web MIDI wird von diesem Browser nicht unterstützt (z. B. Safari auf iPadOS; in Chrome auf Android/Desktop verfügbar). Bluetooth-Tastatur-Pedale (Bild↑/Bild↓/Pfeile) funktionieren auf allen Geräten.';
       return;
     }
     try {

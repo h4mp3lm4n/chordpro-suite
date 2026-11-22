@@ -1,23 +1,23 @@
 ChordPro Studio & Live Performance Suite (v2)
 =============================================
 
-1. LIVE-BÜHNE: IPAD AM KLAVIER <-> LAPTOP AM BEAMER (100% OFFLINE, iOS-SICHER!)
--------------------------------------------------------------------------------
+1. LIVE-BÜHNE: TABLET (IPAD / ANDROID) <-> LAPTOP AM BEAMER (100% OFFLINE!)
+---------------------------------------------------------------------------
 Empfohlene Profi-Variante (kein Internet, kein WebRTC, kein iOS-Block):
-  a) Laptop & iPad ins selbe WLAN oder einen Hotspot (z. B. iPhone/Laptop-Hotspot) verbinden.
+  a) Laptop & Tablet (iPad oder Android) ins selbe WLAN oder einen Hotspot verbinden.
   b) Auf dem Laptop `start-stage-server.bat` (Windows) oder `start-stage-server.sh` (macOS/Linux)
      per Doppelklick starten (benoetigt Node.js >= 18).
   c) Im Browser am Laptop oben rechts auf "Remote" -> "Anzeige (Laptop / Beamer)" klicken.
      Optional: "QR auf Beamer zeigen" druecken.
-  d) Mit der iPad-Kamera den QR-Code scannen -> Safari oeffnet direkt die verbundene Steuerung!
-  e) Optional am Laptop unter Live Stage -> Darstellung -> Beamer-Anzeige z. B.
-     "Publikum (Nur Text, zentriert)" waehlen, waehrend am iPad Akkorde, Hinweise,
+  d) Mit der Tablet-Kamera den QR-Code scannen -> Browser oeffnet direkt die verbundene Steuerung!
+  e) Optional am Laptop unter Live Stage -> Optionen -> Beamer-Anzeige z. B.
+     "Publikum (Nur Text, zentriert)" waehlen, waehrend am Tablet Akkorde, Hinweise,
      Sektions-Sprungleiste, Metronom & "Schwarz"-Button sichtbar bleiben.
 
 Tipp – gemeinsamer Song-Ordner:
   Lege einfach einen Unterordner `songs` neben `server.mjs` an und kopiere deine .cho-Dateien
   hinein (oder starte `node server.mjs --songs "C:\Pfad\zu\Songs"`).
-  Dann haben Laptop UND iPad automatisch exakt dieselbe Song-Bibliothek!
+  Dann haben Laptop UND Tablet automatisch exakt dieselbe Song-Bibliothek!
 
 2. ONLINE-BETRIEB (OHNE LOKALEN SERVER, ALS PWA)
 ------------------------------------------------

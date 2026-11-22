@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'chordpro-v13';
+const CACHE_VERSION = 'chordpro-v14';
 
 const LOCAL_ASSETS = [
   './',

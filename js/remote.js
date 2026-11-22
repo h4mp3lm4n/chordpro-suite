@@ -1,15 +1,13 @@
-// Hybrid Remote Control Engine (iPad <-> Laptop)
+// Hybrid Remote Control Engine (Tablet <-> Laptop / Beamer)
 // Mode 1 (Auto): Local Laptop Server (ws:// + SSE fallback, 100% offline, <5ms latency)
 // Mode 2 (Online): WSS Relay (Custom Cloudflare Worker Port 443 OR Zero-Setup MQTT-over-WSS)
-// No WebRTC / no iOS mDNS blocks / automatic iOS visibilitychange reconnect + offline QR pairing
+// Works identically on iPadOS, Android tablets & desktops (no WebRTC / no iOS mDNS blocks)
 
 import { $, esc, lsGet, lsSet, uid, showToast } from './utils.js';
 import { qrToSvg } from './qr.js';
 
-const MQTT_BROKERS = [
-  'wss://broker.emqx.io:8084/mqtt',
-  'wss://broker.hivemq.com:8884/mqtt'
-];
+// Verified reliable MQTT-over-WSS broker (fixed primary so both devices ALWAYS land on the exact same broker!)
+const DEFAULT_MQTT_BROKER = 'wss://test.mosquitto.org:8081/mqtt';
 
 // --- Minimal Zero-Dependency MQTT 3.1.1 over WebSocket Client ---
 class MiniMqttClient {
@@ -175,8 +173,8 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
   let reconnectTimer = null;
   let reconnectAttempt = 0;
   let pingTimer = null;
+  let helloTimer = null;
   let lastPongAt = 0;
-  let brokerIdx = 0;
   let manualDisconnect = false;
 
   async function detectServer() {
@@ -243,29 +241,55 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
     }
   }
 
+  function hasRemotePeer() {
+    return state.role === 'display' ? state.peers.ctrl > 0 : state.peers.display > 0;
+  }
+
   function handleIncoming(raw) {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
     if (!msg || msg._sid === clientId) return;
 
+    if (msg.t === 'ping') {
+      // Reply directly so peer-to-peer latency works in both local and online MQTT mode
+      send({ t: 'pong', ts: msg.ts, role: state.role });
+      return;
+    }
+
     if (msg.t === 'pong') {
       lastPongAt = Date.now();
       if (msg.ts) state.latencyMs = Math.max(1, Date.now() - msg.ts);
+      if (msg.role === 'ctrl') state.peers.ctrl = Math.max(1, state.peers.ctrl);
+      if (msg.role === 'display') state.peers.display = Math.max(1, state.peers.display);
       notify();
+      return;
+    }
+
+    if (msg.t === 'test-ping') {
+      showToast('📡 Test-Signal von der Gegenseite empfangen!', 2500);
+      send({ t: 'test-ack' });
+      return;
+    }
+
+    if (msg.t === 'test-ack') {
+      showToast('✅ Gegenseite hat das Test-Signal bestätigt!', 2500);
       return;
     }
 
     if (msg.t === 'presence') {
       state.peers = { ctrl: msg.ctrl || 0, display: msg.display || 0 };
+      if (state.role === 'ctrl' && state.peers.display > 0 && onReceive) {
+        onReceive({ t: 'hello' });
+      }
       notify();
       return;
     }
 
     if (msg.t === 'hello') {
-      // In MQTT mode, reply with presence & let app push current song
-      if (state.mode === 'online-mqtt') {
-        send({ t: 'peer-hi', role: state.role });
-      }
+      if (msg.role === 'ctrl') state.peers.ctrl = Math.max(1, state.peers.ctrl);
+      if (msg.role === 'display') state.peers.display = Math.max(1, state.peers.display);
+      send({ t: 'peer-hi', role: state.role });
+      notify();
       if (onReceive) onReceive(msg);
       return;
     }
@@ -274,6 +298,10 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
       if (msg.role === 'ctrl') state.peers.ctrl = Math.max(1, state.peers.ctrl);
       if (msg.role === 'display') state.peers.display = Math.max(1, state.peers.display);
       notify();
+      // If a display just greeted us while we're controller, immediately push current song!
+      if (state.role === 'ctrl' && msg.role === 'display' && onReceive) {
+        onReceive({ t: 'hello' });
+      }
       return;
     }
 
@@ -283,14 +311,24 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
   function startHeartbeat() {
     stopHeartbeat();
     lastPongAt = Date.now();
+    // Periodically announce presence until the other device responds (solves join-order race!)
+    helloTimer = setInterval(() => {
+      if (!state.connected) return;
+      if (!hasRemotePeer()) {
+        send({ t: 'hello', role: state.role });
+      } else {
+        clearInterval(helloTimer);
+        helloTimer = null;
+      }
+    }, 2500);
+
     pingTimer = setInterval(() => {
       if (!state.connected) return;
-      if (state.mode !== 'online-mqtt') {
-        if (Date.now() - lastPongAt > 14000) {
-          // Stale connection (common after iOS sleep) -> force reconnect
-          scheduleReconnect(true);
-          return;
-        }
+      if (state.mode !== 'online-mqtt' && Date.now() - lastPongAt > 14000) {
+        scheduleReconnect(true);
+        return;
+      }
+      if (state.mode !== 'online-mqtt' || hasRemotePeer()) {
         send({ t: 'ping', ts: Date.now() });
       }
     }, 5000);
@@ -298,7 +336,9 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
 
   function stopHeartbeat() {
     clearInterval(pingTimer);
+    clearInterval(helloTimer);
     pingTimer = null;
+    helloTimer = null;
   }
 
   function teardownTransport() {
@@ -341,9 +381,6 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
     const onDrop = reason => {
       if (manualDisconnect) return;
       state.connected = false;
-      if (state.mode === 'online-mqtt') {
-        brokerIdx = (brokerIdx + 1) % MQTT_BROKERS.length;
-      }
       if (reason && reconnectAttempt > 2) {
         state.error = 'Verbindung unterbrochen – versuche erneuten Verbindungsaufbau…';
       }
@@ -362,9 +399,8 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
       const wsUrl = `${state.customRelayUrl}${sep}room=${encodeURIComponent(state.room)}&role=${encodeURIComponent(state.role)}`;
       openPlainWebSocket(wsUrl, onOpen, onDrop);
     } else {
-      const broker = MQTT_BROKERS[brokerIdx % MQTT_BROKERS.length];
       const topic = `chordpro-studio/v2/room/${state.room}`;
-      transport = new MiniMqttClient(broker, clientId, topic, handleIncoming, onOpen, onDrop);
+      transport = new MiniMqttClient(DEFAULT_MQTT_BROKER, clientId, topic, handleIncoming, onOpen, onDrop);
     }
   }
 
@@ -491,17 +527,22 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
       ? `<span class="badge badge-ok">⚡ Lokaler Laptop-Server (Offline, WLAN)</span>`
       : state.mode === 'custom-wss'
         ? `<span class="badge badge-ok">☁️ Eigener Cloud-Relay (WSS Port 443)</span>`
-        : `<span class="badge badge-info">🌐 Online WSS-Relay (iOS-kompatibel)</span>`;
+        : `<span class="badge badge-info">🌐 Online WSS-Relay (iPadOS &amp; Android)</span>`;
 
     let html = `<div style="margin-bottom:10px">${modeBadge}</div>`;
 
     if (state.role) {
-      const statusDot = state.connected ? '🟢 Verbunden' : state.reconnecting ? '🟡 Verbinde neu…' : '🟡 Verbinde…';
-      const roleLabel = state.role === 'display' ? '🖥 Anzeige (Laptop / Beamer)' : '🎹 Steuerung (iPad / Klavier)';
+      const paired = hasRemotePeer();
+      const statusDot = !state.connected
+        ? (state.reconnecting ? '🟡 Verbinde neu…' : '🟡 Verbinde mit Server…')
+        : paired
+          ? '🟢 Gekoppelt &amp; bereit'
+          : '🟡 Relay aktiv · Warte auf Gegenseite…';
+      const roleLabel = state.role === 'display' ? '🖥 Anzeige (Laptop / Beamer)' : '🎹 Steuerung (Tablet)';
       const latencyTxt = state.latencyMs != null ? ` · ${state.latencyMs} ms` : '';
       const peerTxt = state.role === 'display'
-        ? (state.peers.ctrl > 0 ? ` · ${state.peers.ctrl} Steuerung aktiv` : ' · Warte auf iPad…')
-        : (state.peers.display > 0 ? ` · ${state.peers.display} Anzeige aktiv` : ' · Warte auf Anzeige…');
+        ? (state.peers.ctrl > 0 ? ` · ${state.peers.ctrl} Steuerung verbunden` : '')
+        : (state.peers.display > 0 ? ` · ${state.peers.display} Anzeige verbunden` : '');
 
       html += `
         <div class="remote-card">
@@ -520,25 +561,27 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
           <div class="qr-panel">
             <div class="qr-box">${qrSvg}</div>
             <div class="qr-info">
-              <div class="qr-step">1. iPad-Kamera auf den QR-Code halten</div>
-              <div class="muted" style="font-size:12px;margin:4px 0 8px">Safari öffnet direkt die verbundene Steuerung (kein WebRTC, kein iOS-Block).</div>
+              <div class="qr-step">1. Tablet-Kamera auf den QR-Code halten</div>
+              <div class="muted" style="font-size:12px;margin:4px 0 8px">Funktioniert auf iPad (Safari) &amp; Android (Chrome) – kein WebRTC-Block. Sobald am Tablet ein Song in Live Stage startet, blendet sich dieses Fenster automatisch aus.</div>
               <div class="qr-code-num">${esc(state.room)}</div>
               ${ipPicker}
               <div class="muted" style="font-size:11px;word-break:break-all;margin-top:6px">${esc(joinUrl)}</div>
               <div class="flex gap-2 flex-wrap" style="margin-top:8px">
                 <button class="btn-sm" id="sy-copy">Link kopieren</button>
                 <button class="btn-sm" id="sy-beamer-qr">📺 QR auf Beamer zeigen</button>
+                <button class="btn-sm" id="sy-test">🧪 Test-Signal</button>
               </div>
             </div>
           </div>`;
       } else {
         html += `
           <p class="muted" style="font-size:13px;margin:10px 0">
-            Öffne jetzt <b>Live Stage</b>: Jeder Songwechsel, jedes Scrollen, jeder Sektions-Sprung und <b>Beamer Schwarz</b> wird direkt an den Laptop übertragen.
+            Öffne jetzt <b>Live Stage</b>: Jeder Songwechsel, jedes Scrollen, jeder Sektions-Sprung und <b>Beamer Schwarz</b> wird direkt an die Anzeige übertragen.
           </p>
           <div class="flex gap-2 flex-wrap">
             <button id="sy-go-stage" class="pri">🎤 Live Stage öffnen</button>
             <button id="sy-resync">↻ Neu synchronisieren</button>
+            <button id="sy-test">🧪 Test-Signal</button>
           </div>`;
       }
 
@@ -549,11 +592,11 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
         <div class="remote-roles">
           <button id="sy-display" class="role-btn">
             <span class="role-title">🖥 Anzeige (Laptop / Beamer)</span>
-            <span class="role-desc">Erzeugt Raum-Code &amp; QR-Code fürs iPad. Empfängt Song, Scroll &amp; Blackout.</span>
+            <span class="role-desc">Erzeugt Raum-Code &amp; QR-Code fürs Tablet. Empfängt Song, Scroll &amp; Blackout.</span>
           </button>
           <div class="role-btn role-ctrl-box">
-            <span class="role-title">🎹 Steuerung (iPad am Klavier)</span>
-            <span class="role-desc">Code der Anzeige eingeben (oder einfach deren QR-Code scannen):</span>
+            <span class="role-title">🎹 Steuerung (Tablet)</span>
+            <span class="role-desc">Code der Anzeige eingeben (oder einfach deren QR-Code mit iPad / Android scannen):</span>
             <div class="flex gap-2" style="margin-top:8px">
               <input type="text" id="sy-code-in" inputmode="numeric" maxlength="12" placeholder="${state.mode === 'local' ? '4-stellig' : '6-stellig'}" style="width:120px;text-align:center;font-weight:700;letter-spacing:2px">
               <button id="sy-join" class="pri">Verbinden</button>
@@ -566,7 +609,7 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
           <details class="remote-adv">
             <summary>⚙ Offline-Bühne &amp; Eigener Cloud-Relay</summary>
             <div style="margin-top:8px;font-size:12px;line-height:1.5">
-              <p><b>100 % Offline (ohne Internet):</b> Starte auf dem Laptop <code>start-stage-server.bat</code> (oder <code>node server.mjs</code>) und verbinde Laptop &amp; iPad per WLAN/Hotspot. Die App erkennt den lokalen Server dann automatisch!</p>
+              <p><b>100 % Offline (ohne Internet):</b> Starte auf dem Laptop <code>start-stage-server.bat</code> (oder <code>node server.mjs</code>) und verbinde Laptop &amp; Tablet per WLAN/Hotspot. Die App erkennt den lokalen Server dann automatisch!</p>
               <p style="margin-top:8px"><b>Eigener Cloudflare WSS-Relay (Port 443, optional):</b></p>
               <div class="flex gap-2" style="margin-top:4px">
                 <input type="text" id="sy-relay-in" value="${esc(state.customRelayUrl)}" placeholder="wss://chordpro-relay.xxx.workers.dev/ws" style="flex:1;font-size:12px">
@@ -615,6 +658,10 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
       if (onReceive) onReceive({ t: 'hello' });
       showToast('Synchronisiert');
     });
+    on('sy-test', () => {
+      send({ t: 'test-ping' });
+      showToast('Test-Signal gesendet…');
+    });
     on('sy-relay-save', () => {
       setCustomRelayUrl($('#sy-relay-in')?.value || '');
       showToast(state.customRelayUrl ? 'Eigener Cloud-Relay gespeichert' : 'Standard-WSS-Relay aktiv');
@@ -635,7 +682,7 @@ export function createRemote({ onReceive, onStatusChange, onOpenModal }) {
     const joinUrl = getJoinUrl('ctrl');
     ov.innerHTML = `
       <div class="bqr-card">
-        <h2>iPad verbinden</h2>
+        <h2>Tablet verbinden</h2>
         <div class="bqr-svg">${qrToSvg(joinUrl, 300)}</div>
         <div class="bqr-code">Code: <b>${esc(state.room)}</b></div>
         <div class="bqr-url">${esc(joinUrl)}</div>

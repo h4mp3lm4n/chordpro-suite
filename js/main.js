@@ -106,12 +106,15 @@ async function boot() {
   function updateRemotePill(st) {
     const btn = $('#sybtn');
     if (!btn) return;
-    btn.classList.toggle('connected', st.connected);
-    btn.classList.toggle('waiting', !st.connected && !!st.role);
-    if (st.connected) {
+    const paired = st.connected && (st.role === 'display' ? st.peers.ctrl > 0 : st.peers.display > 0);
+    btn.classList.toggle('connected', paired);
+    btn.classList.toggle('waiting', !!st.role && !paired);
+    if (paired) {
       btn.innerHTML = st.role === 'display'
         ? `<span class="dot ok"></span><span>Anzeige</span>`
         : `<span class="dot ok"></span><span>Steuerung</span>`;
+    } else if (st.connected && st.role) {
+      btn.innerHTML = `<span class="dot warn"></span><span>Warte…</span>`;
     } else if (st.role) {
       btn.innerHTML = `<span class="dot warn"></span><span>Verbinde…</span>`;
     } else {
@@ -238,26 +241,43 @@ async function boot() {
   let midiLearnAction = null;
   const midiMap = lsGet('cp_midi', {});
   const midiActions = {
-    next: 'Nächster Song',
-    prev: 'Vorheriger Song',
-    scroll: 'AutoScroll Start/Pause'
+    next: 'Nächster Song (⏭)',
+    prev: 'Vorheriger Song (⏮)',
+    scroll: 'AutoScroll Start / Pause (▶)',
+    scrollUp: 'Scroll hoch (▲)',
+    scrollDown: 'Scroll runter (▼)',
+    speedUp: 'Scroll-Tempo schneller (+)',
+    speedDown: 'Scroll-Tempo langsamer (−)',
+    blackout: 'Beamer Schwarz an / aus (⬛)'
   };
 
   function renderMidiUi() {
     $('#mal').innerHTML = Object.keys(midiActions).map(act => `
       <div class="flex gap-2 items-center my-2">
-        <span style="flex:1">${midiActions[act]}: <code>${esc(midiMap[act] || '–')}</code></span>
-        <button class="btn-sm" data-a="${act}">${midiLearnAction === act ? 'Warte auf Pedal…' : 'Anlernen'}</button>
+        <span style="flex:1;font-size:13px">${midiActions[act]}: <code>${esc(midiMap[act] || '–')}</code></span>
+        <button class="btn-sm${midiLearnAction === act ? ' pri' : ''}" data-a="${act}">${midiLearnAction === act ? 'Warte auf Signal…' : 'Anlernen'}</button>
+        ${midiMap[act] ? `<button class="btn-xs danger" data-clr="${act}" title="Zuweisung entfernen">✕</button>` : ''}
       </div>`).join('');
-    $$('#mal button').forEach(b => {
-      b.onclick = () => { midiLearnAction = b.dataset.a; renderMidiUi(); };
+    $$('#mal [data-a]').forEach(b => {
+      b.onclick = () => {
+        midiLearnAction = midiLearnAction === b.dataset.a ? null : b.dataset.a;
+        renderMidiUi();
+      };
+    });
+    $$('#mal [data-clr]').forEach(b => {
+      b.onclick = () => {
+        delete midiMap[b.dataset.clr];
+        lsSet('cp_midi', midiMap);
+        renderMidiUi();
+      };
     });
   }
 
   function handleMidiMessage(e) {
     const [status, d1, d2] = e.data;
     const type = status & 0xf0;
-    if (!(type === 0x90 || type === 0xb0) || !d2) return;
+    // Accept Note On (0x90), Control Change (0xb0) with value > 0, and Program Change (0xc0)
+    if (!((type === 0x90 && d2 > 0) || (type === 0xb0 && d2 > 0) || type === 0xc0)) return;
     const key = `${type.toString(16)}-${d1}`;
     if (midiLearnAction) {
       midiMap[midiLearnAction] = key;
@@ -267,16 +287,27 @@ async function boot() {
       return;
     }
     const act = Object.keys(midiMap).find(x => midiMap[x] === key);
+    if (!act || !stage.isOpen()) {
+      // Allow song switching even if stage already open; ignore others when not in stage
+      if (act === 'next' && stage.isOpen()) stage.goSong(1);
+      else if (act === 'prev' && stage.isOpen()) stage.goSong(-1);
+      return;
+    }
     if (act === 'next') stage.goSong(1);
     else if (act === 'prev') stage.goSong(-1);
-    else if (act === 'scroll' && stage.isOpen()) stage.togglePlay();
+    else if (act === 'scroll') stage.togglePlay();
+    else if (act === 'scrollUp') stage.nudge(-1);
+    else if (act === 'scrollDown') stage.nudge(1);
+    else if (act === 'speedUp') stage.adjustTempo(5);
+    else if (act === 'speedDown') stage.adjustTempo(-5);
+    else if (act === 'blackout') stage.toggleBlackout();
   }
 
   async function openMidiModal() {
     openModal('x-mi');
     renderMidiUi();
     if (!navigator.requestMIDIAccess) {
-      $('#mst').textContent = 'Web MIDI wird von diesem Browser nicht unterstützt (z. B. iOS Safari). Bluetooth-Tastatur-Pedale (Bild↑/Bild↓/Pfeile) funktionieren trotzdem.';
+      $('#mst').textContent = 'Web MIDI wird von diesem Browser nicht unterstützt (z. B. Safari auf iPadOS; in Chrome auf Android/Desktop verfügbar). Bluetooth-Tastatur-Pedale (Bild↑/Bild↓/Pfeile) funktionieren auf allen Geräten.';
       return;
     }
     try {
